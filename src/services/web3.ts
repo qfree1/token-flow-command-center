@@ -1,4 +1,3 @@
-
 import Web3 from 'web3';
 
 // ABI for ERC20 token (simplified)
@@ -38,7 +37,7 @@ const tokenABI = [
 // Web3D token contract address on BSC
 const TOKEN_CONTRACT_ADDRESS = '0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7';
 // Admin wallet address
-const ADMIN_ADDRESS = '0xcaE2D679961bd3e7501E9a48a9f820521bE6d1eE';
+const ADMIN_ADDRESS = '0x4A58ad9EdaC24762D3eA8eB76ab1E2C114cBB4d4';
 
 // For frontend only operations
 export const getWeb3 = async (): Promise<Web3> => {
@@ -149,5 +148,3 @@ export const distributeTokens = async (wallets: string[], amount: string): Promi
     throw error;
   }
 };
-
-// Removed the redundant global interface declaration that was causing the error

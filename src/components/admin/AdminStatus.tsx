@@ -31,7 +31,7 @@ const AdminStatus = ({ isAdmin }: AdminStatusProps) => {
               : "Connect your admin wallet to enable token distribution."}
           </p>
           <p className="text-xs text-muted-foreground">
-            Admin Wallet: 0xcaE2D679961bd3e7501E9a48a9f820521bE6d1eE
+            Admin Wallet: 0x4A58ad9EdaC24762D3eA8eB76ab1E2C114cBB4d4
           </p>
         </div>
       </div>
