@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +10,12 @@ import { toast } from '@/hooks/use-toast';
 import { Check, Loader, Users, Coins, Send, Lock } from 'lucide-react';
 
 interface TokenFormProps {
-  onSubmit: (wallets: string[], amount: string) => Promise<void>;
-  disabled: boolean;
+  onSubmit?: (wallets: string[], amount: string) => Promise<void>;
+  disabled?: boolean;
+  walletAddress?: string; // Add the walletAddress prop
 }
 
-const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
+const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled = false, walletAddress }) => {
   const [walletList, setWalletList] = useState('');
   const [tokenAmount, setTokenAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,25 +56,27 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
       return;
     }
 
-    setLoading(true);
-    try {
-      await onSubmit(wallets, tokenAmount);
-      setWalletList('');
-      setTokenAmount('');
-      toast({
-        title: "Success",
-        description: "Tokens have been allocated for claiming",
-        variant: "default"
-      });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to allocate tokens. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+    if (onSubmit) {
+      setLoading(true);
+      try {
+        await onSubmit(wallets, tokenAmount);
+        setWalletList('');
+        setTokenAmount('');
+        toast({
+          title: "Success",
+          description: "Tokens have been allocated for claiming",
+          variant: "default"
+        });
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: "Error",
+          description: "Failed to allocate tokens. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -96,6 +100,14 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Display wallet address if provided */}
+            {walletAddress && (
+              <div className="bg-muted/30 p-3 rounded-lg text-sm">
+                <p className="text-muted-foreground mb-1">Admin Wallet:</p>
+                <p className="font-mono truncate">{walletAddress}</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="wallets" className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
