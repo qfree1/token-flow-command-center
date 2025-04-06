@@ -62,14 +62,14 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
       setTokenAmount('');
       toast({
         title: "Success",
-        description: "Tokens have been distributed successfully",
+        description: "Tokens have been allocated for claiming",
         variant: "default"
       });
     } catch (error) {
       console.error(error);
       toast({
         title: "Error",
-        description: "Failed to distribute tokens. Please try again.",
+        description: "Failed to allocate tokens. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -86,7 +86,7 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
       <Card className="glass-card w-full max-w-md mx-auto">
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle className="text-center text-2xl font-bold">Distribute Tokens</CardTitle>
+            <CardTitle className="text-center text-2xl font-bold">Allocate Tokens</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -101,7 +101,7 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Token Amount</Label>
+              <Label htmlFor="amount">Token Amount (per wallet)</Label>
               <Input
                 id="amount"
                 placeholder="100"
@@ -126,7 +126,7 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
               ) : (
                 <Check className="h-5 w-5 mr-2" />
               )}
-              Claim Tokens
+              Allocate Tokens for Claiming
             </Button>
           </CardFooter>
         </form>

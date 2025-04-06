@@ -6,6 +6,8 @@ import WalletConnect from '../components/WalletConnect';
 import TokenForm from '../components/TokenForm';
 import Header from '../components/Header';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -50,13 +52,13 @@ const Index = () => {
       await distributeTokens(wallets, amount);
       toast({
         title: "Success",
-        description: `Distributed ${amount} tokens to ${wallets.length} wallets`,
+        description: `Allocated ${amount} tokens to ${wallets.length} wallets for claiming`,
       });
     } catch (error) {
       console.error(error);
       toast({
         title: "Distribution Failed",
-        description: "Failed to distribute tokens. Please try again.",
+        description: "Failed to allocate tokens. Please try again.",
         variant: "destructive"
       });
     }
@@ -78,6 +80,19 @@ const Index = () => {
             onSubmit={handleDistributeTokens}
             disabled={!isAdmin || !walletAddress} 
           />
+          
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="text-center"
+          >
+            <Link to="/claim">
+              <Button variant="outline" className="hover:bg-primary/10">
+                Go to Token Claim Page
+              </Button>
+            </Link>
+          </motion.div>
           
           <motion.div
             initial={{ opacity: 0 }}
