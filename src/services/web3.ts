@@ -66,27 +66,30 @@ export const isAdminWallet = (address: string): boolean => {
   return address.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
 };
 
-// Load token allocations from localStorage
+// Load token allocations from localStorage with better error handling
 const loadTokenAllocations = (): Map<string, string> => {
-  const saved = localStorage.getItem('tokenAllocations');
-  if (!saved) return new Map();
-  
   try {
+    const saved = localStorage.getItem('tokenAllocations');
+    if (!saved) return new Map();
+    
     // Convert from saved JSON object format back to Map
     const parsed = JSON.parse(saved);
+    console.log("Loaded token allocations:", parsed);
     return new Map(Object.entries(parsed));
   } catch (error) {
     console.error("Error loading token allocations:", error);
+    // If there's an error, return an empty Map rather than letting the error propagate
     return new Map();
   }
 };
 
-// Save token allocations to localStorage
+// Save token allocations to localStorage with better error handling
 const saveTokenAllocations = (allocations: Map<string, string>): void => {
   try {
     // Convert Map to plain object for JSON serialization
     const allocationsObject = Object.fromEntries(allocations.entries());
     localStorage.setItem('tokenAllocations', JSON.stringify(allocationsObject));
+    console.log("Saved token allocations:", allocationsObject);
   } catch (error) {
     console.error("Error saving token allocations:", error);
   }
@@ -102,9 +105,14 @@ export const setTokenAllocations = (wallets: string[], amount: string): void => 
     return;
   }
 
+  // First, ensure we have the latest allocations
+  tokenAllocations = loadTokenAllocations();
+
+  let validWallets = 0;
   wallets.forEach(wallet => {
     if (wallet && wallet.startsWith('0x') && wallet.length === 42) {
       tokenAllocations.set(wallet.toLowerCase(), amount);
+      validWallets++;
     } else {
       console.error("Invalid wallet address:", wallet);
     }
@@ -114,7 +122,7 @@ export const setTokenAllocations = (wallets: string[], amount: string): void => 
   saveTokenAllocations(tokenAllocations);
   
   // Log confirmation for debugging
-  console.log(`Set allocations for ${wallets.length} wallets. Current allocations:`, 
+  console.log(`Set allocations for ${validWallets} wallets. Current allocations:`, 
     Object.fromEntries(tokenAllocations.entries()));
 };
 
@@ -131,6 +139,7 @@ export const checkTokenAllocation = async (address: string): Promise<string | nu
   
   const allocation = tokenAllocations.get(walletAddress);
   console.log(`Checking allocation for ${walletAddress}: ${allocation || 'None'}`);
+  console.log("All current allocations:", Object.fromEntries(tokenAllocations.entries()));
   
   return allocation || null;
 };
@@ -146,6 +155,8 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
     // Reload from localStorage to ensure we have the latest data
     tokenAllocations = loadTokenAllocations();
     const walletAddress = userAddress.toLowerCase();
+    
+    console.log("Before claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
     const allocation = tokenAllocations.get(walletAddress);
     
     console.log(`Claiming tokens for ${walletAddress}, allocation: ${allocation || 'None'}`);
@@ -178,6 +189,7 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
     saveTokenAllocations(tokenAllocations);
     
     console.log(`Successfully claimed tokens for ${walletAddress}. Allocation removed.`);
+    console.log("After claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
     
     return true;
   } catch (error) {
@@ -217,6 +229,7 @@ export const distributeTokens = async (wallets: string[], amount: string): Promi
     */
     
     console.log("Token distribution completed successfully");
+    console.log("Current allocations after distribution:", Object.fromEntries(tokenAllocations.entries()));
     return;
   } catch (error) {
     console.error("Error distributing tokens:", error);
