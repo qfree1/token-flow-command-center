@@ -97,28 +97,58 @@ let tokenAllocations = loadTokenAllocations();
 
 // Function for admin to set token allocations
 export const setTokenAllocations = (wallets: string[], amount: string): void => {
+  if (!wallets || !amount || wallets.length === 0 || isNaN(Number(amount))) {
+    console.error("Invalid wallets or amount");
+    return;
+  }
+
   wallets.forEach(wallet => {
-    tokenAllocations.set(wallet.toLowerCase(), amount);
+    if (wallet && wallet.startsWith('0x') && wallet.length === 42) {
+      tokenAllocations.set(wallet.toLowerCase(), amount);
+    } else {
+      console.error("Invalid wallet address:", wallet);
+    }
   });
+  
   // Save updated allocations to localStorage
   saveTokenAllocations(tokenAllocations);
+  
+  // Log confirmation for debugging
+  console.log(`Set allocations for ${wallets.length} wallets. Current allocations:`, 
+    Object.fromEntries(tokenAllocations.entries()));
 };
 
 // Function for users to check if they have an allocation
 export const checkTokenAllocation = async (address: string): Promise<string | null> => {
+  if (!address || !address.startsWith('0x') || address.length !== 42) {
+    console.error("Invalid wallet address for allocation check");
+    return null;
+  }
+  
   // Reload from localStorage to ensure we have the latest data
   tokenAllocations = loadTokenAllocations();
   const walletAddress = address.toLowerCase();
-  return tokenAllocations.get(walletAddress) || null;
+  
+  const allocation = tokenAllocations.get(walletAddress);
+  console.log(`Checking allocation for ${walletAddress}: ${allocation || 'None'}`);
+  
+  return allocation || null;
 };
 
 // Function for users to claim their tokens
 export const claimTokens = async (userAddress: string): Promise<boolean> => {
+  if (!userAddress || !userAddress.startsWith('0x') || userAddress.length !== 42) {
+    console.error("Invalid wallet address for claiming tokens");
+    throw new Error("Invalid wallet address");
+  }
+  
   try {
     // Reload from localStorage to ensure we have the latest data
     tokenAllocations = loadTokenAllocations();
     const walletAddress = userAddress.toLowerCase();
     const allocation = tokenAllocations.get(walletAddress);
+    
+    console.log(`Claiming tokens for ${walletAddress}, allocation: ${allocation || 'None'}`);
     
     if (!allocation) {
       throw new Error("No token allocation found for this wallet");
@@ -147,6 +177,8 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
     // Save updated allocations to localStorage
     saveTokenAllocations(tokenAllocations);
     
+    console.log(`Successfully claimed tokens for ${walletAddress}. Allocation removed.`);
+    
     return true;
   } catch (error) {
     console.error("Error claiming tokens:", error);
@@ -156,7 +188,13 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
 
 // Distribute tokens function (for admin use)
 export const distributeTokens = async (wallets: string[], amount: string): Promise<void> => {
+  if (!wallets || wallets.length === 0 || !amount || isNaN(Number(amount))) {
+    throw new Error("Invalid wallets or amount");
+  }
+  
   try {
+    console.log(`Distributing ${amount} tokens to ${wallets.length} wallets`);
+    
     // Add wallets to eligible list
     setTokenAllocations(wallets, amount);
     
@@ -178,6 +216,7 @@ export const distributeTokens = async (wallets: string[], amount: string): Promi
     }
     */
     
+    console.log("Token distribution completed successfully");
     return;
   } catch (error) {
     console.error("Error distributing tokens:", error);
