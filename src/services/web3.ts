@@ -98,9 +98,4 @@ export const distributeTokens = async (wallets: string[], amount: string): Promi
   }
 };
 
-// Types to help with TypeScript
-declare global {
-  interface Window {
-    ethereum: any;
-  }
-}
+// Removed the redundant global interface declaration that was causing the error
