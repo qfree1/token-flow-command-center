@@ -8,12 +8,14 @@ import Index from "./pages/Index";
 import Claim from "./pages/Claim";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
+import { CyberGrid } from "./components/CyberGrid";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <CyberGrid />
       <Toaster />
       <Sonner />
       <BrowserRouter>

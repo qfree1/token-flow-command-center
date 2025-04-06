@@ -5,33 +5,33 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
+    --background: 260 20% 5%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 15%;
+    --card: 260 20% 8%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 11%;
+    --popover: 260 20% 5%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 262 50% 55%;
+    --primary: 272 91% 65%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 199 92% 49%;
+    --secondary: 330 86% 56%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 260 20% 15%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 262 50% 55%;
+    --accent: 272 91% 65%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262 50% 55%;
+    --border: 260 20% 15%;
+    --input: 260 20% 15%;
+    --ring: 272 91% 65%;
     --radius: 0.75rem;
   }
 }
@@ -42,24 +42,121 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground relative;
+    background-image: 
+      radial-gradient(circle at 50% 0%, rgba(103, 58, 183, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 85% 30%, rgba(233, 30, 99, 0.1) 0%, transparent 55%);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(90, 90, 90, 0.03) 3px,
+        rgba(90, 90, 90, 0.03) 3px
+      );
+    pointer-events: none;
+    z-index: -1;
   }
 }
 
 .gradient-bg {
-  background: linear-gradient(135deg, hsla(262, 50%, 55%, 0.8), hsla(199, 92%, 49%, 0.8));
+  background: linear-gradient(135deg, rgba(103, 58, 183, 0.8), rgba(233, 30, 99, 0.8));
 }
 
 .glass-card {
-  background: rgba(26, 31, 44, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(26, 15, 44, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(103, 58, 183, 0.2);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .glow {
-  box-shadow: 0 0 15px rgba(126, 105, 171, 0.5);
+  box-shadow: 0 0 20px rgba(103, 58, 183, 0.5);
 }
 
 .glow-text {
-  text-shadow: 0 0 10px rgba(30, 174, 219, 0.7);
+  text-shadow: 0 0 10px rgba(233, 30, 99, 0.7);
+}
+
+.cyber-grid {
+  background-image: linear-gradient(rgba(103, 58, 183, 0.3) 1px, transparent 1px), 
+                    linear-gradient(90deg, rgba(103, 58, 183, 0.3) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.cyber-border {
+  position: relative;
+}
+
+.cyber-border::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(233, 30, 99, 0.3);
+  clip-path: polygon(
+    0 5px, 5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px),
+    calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px)
+  );
+  pointer-events: none;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.node-connection {
+  stroke: rgba(233, 30, 99, 0.5);
+  stroke-width: 1;
+  stroke-dasharray: 5;
+  animation: flow 20s linear infinite;
+}
+
+@keyframes flow {
+  to { stroke-dashoffset: 1000; }
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #673AB7, #E91E63);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.neo-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.neo-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transform: translateX(-100%);
+}
+
+.neo-button:hover::after {
+  transform: translateX(100%);
+  transition: transform 0.6s linear;
 }
