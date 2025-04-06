@@ -39,6 +39,15 @@ const tokenABI = [
 const TOKEN_CONTRACT_ADDRESS = '0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7';
 // Admin wallet address
 const ADMIN_ADDRESS = '0x4A58ad9EdaC24762D3eA8eB76ab1E2C114cBB4d4';
+// Default BSC RPC endpoint
+const BSC_RPC_URL = 'https://bsc-dataseed.binance.org/';
+// API base URL - this would be your deployed backend URL in production
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-backend-api.com/api' 
+  : 'http://localhost:3001/api';
+
+// Environment check for dev/prod modes
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // For frontend only operations
 export const getWeb3 = async (): Promise<Web3> => {
@@ -54,6 +63,11 @@ export const getWeb3 = async (): Promise<Web3> => {
   } else {
     throw new Error("No Ethereum browser extension detected");
   }
+};
+
+// Alternative method to get Web3 instance when MetaMask isn't available
+export const getWeb3ReadOnly = (): Web3 => {
+  return new Web3(new Web3.providers.HttpProvider(BSC_RPC_URL));
 };
 
 export const connectWallet = async (): Promise<string> => {
@@ -123,41 +137,112 @@ const saveTokenAllocations = (allocations: Map<string, string>): void => {
 // Initialize token allocations from localStorage
 let tokenAllocations = loadTokenAllocations();
 
+// API interaction functions for production use
+const api = {
+  async setAllocations(wallets: string[], amount: string) {
+    const response = await fetch(`${API_BASE_URL}/allocations/set`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ wallets, amount }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to set allocations');
+    }
+    
+    return await response.json();
+  },
+  
+  async checkAllocation(address: string) {
+    const response = await fetch(`${API_BASE_URL}/allocations/check?address=${address}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // No allocation found
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to check allocation');
+    }
+    
+    const data = await response.json();
+    return data.amount;
+  },
+  
+  async claimTokens(address: string) {
+    const response = await fetch(`${API_BASE_URL}/tokens/claim`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to claim tokens');
+    }
+    
+    return await response.json();
+  }
+};
+
 // Function for admin to set token allocations
-export const setTokenAllocations = (wallets: string[], amount: string): void => {
+export const setTokenAllocations = async (wallets: string[], amount: string): Promise<void> => {
   if (!wallets || !amount || wallets.length === 0 || isNaN(Number(amount))) {
     console.error("Invalid wallets or amount");
-    return;
+    throw new Error("Invalid wallets or amount");
   }
 
-  // First, ensure we have the latest allocations
-  tokenAllocations = loadTokenAllocations();
+  // Filter valid wallet addresses
+  const validWallets = wallets.filter(wallet => wallet && wallet.startsWith('0x') && wallet.length === 42);
+  if (validWallets.length === 0) {
+    console.error("No valid wallet addresses provided");
+    throw new Error("No valid wallet addresses provided");
+  }
 
-  console.log("Setting allocations for wallets:", wallets);
-  console.log("Amount per wallet:", amount);
-  
-  let validWallets = 0;
-  wallets.forEach(wallet => {
-    if (wallet && wallet.startsWith('0x') && wallet.length === 42) {
+  if (isDevelopment) {
+    // Development mode: use localStorage
+    console.log("Development mode: Setting allocations in localStorage");
+    
+    // First, ensure we have the latest allocations
+    tokenAllocations = loadTokenAllocations();
+
+    console.log("Setting allocations for wallets:", validWallets);
+    console.log("Amount per wallet:", amount);
+    
+    validWallets.forEach(wallet => {
       const normalizedWallet = wallet.toLowerCase();
       tokenAllocations.set(normalizedWallet, amount);
       console.log(`Added allocation for wallet ${normalizedWallet}: ${amount} tokens`);
-      validWallets++;
-    } else {
-      console.error("Invalid wallet address:", wallet);
+    });
+    
+    // Save updated allocations to localStorage
+    saveTokenAllocations(tokenAllocations);
+    
+    // Force a reload from localStorage to verify persistence
+    const reloaded = loadTokenAllocations();
+    console.log(`Verification - Reloaded allocations after save:`, Object.fromEntries(reloaded.entries()));
+    
+    return;
+  } else {
+    // Production mode: use backend API
+    console.log("Production mode: Setting allocations via API");
+    try {
+      await api.setAllocations(validWallets, amount);
+      console.log(`Successfully set allocations for ${validWallets.length} wallets via API`);
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
     }
-  });
-  
-  // Save updated allocations to localStorage
-  saveTokenAllocations(tokenAllocations);
-  
-  // Force a reload from localStorage to verify persistence
-  const reloaded = loadTokenAllocations();
-  console.log(`Verification - Reloaded allocations after save:`, Object.fromEntries(reloaded.entries()));
-  
-  // Log confirmation for debugging
-  console.log(`Set allocations for ${validWallets} wallets. Current allocations:`, 
-    Object.fromEntries(tokenAllocations.entries()));
+  }
 };
 
 // Function for users to check if they have an allocation
@@ -167,17 +252,31 @@ export const checkTokenAllocation = async (address: string): Promise<string | nu
     return null;
   }
   
-  // Always reload from localStorage to ensure we have the latest data
-  tokenAllocations = loadTokenAllocations();
   const walletAddress = address.toLowerCase();
-  
   console.log(`Checking allocation for wallet: ${walletAddress}`);
-  const allocation = tokenAllocations.get(walletAddress);
   
-  console.log(`Allocation result for ${walletAddress}: ${allocation || 'None'}`);
-  console.log("All current allocations:", Object.fromEntries(tokenAllocations.entries()));
-  
-  return allocation || null;
+  if (isDevelopment) {
+    // Development mode: check localStorage
+    // Always reload from localStorage to ensure we have the latest data
+    tokenAllocations = loadTokenAllocations();
+    
+    const allocation = tokenAllocations.get(walletAddress);
+    
+    console.log(`Allocation result for ${walletAddress}: ${allocation || 'None'}`);
+    console.log("All current allocations:", Object.fromEntries(tokenAllocations.entries()));
+    
+    return allocation || null;
+  } else {
+    // Production mode: use backend API
+    try {
+      const allocation = await api.checkAllocation(walletAddress);
+      console.log(`API allocation result for ${walletAddress}: ${allocation || 'None'}`);
+      return allocation;
+    } catch (error) {
+      console.error("API Error:", error);
+      return null;
+    }
+  }
 };
 
 // Function for users to claim their tokens
@@ -187,100 +286,89 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
     throw new Error("Invalid wallet address");
   }
   
-  try {
-    console.log(`Attempting to claim tokens for: ${userAddress}`);
-    
-    // Always reload from localStorage to ensure we have the latest data
-    tokenAllocations = loadTokenAllocations();
-    const walletAddress = userAddress.toLowerCase();
-    
-    console.log("Before claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
-    const allocation = tokenAllocations.get(walletAddress);
-    
-    console.log(`Token allocation for ${walletAddress}: ${allocation || 'None'}`);
-    
-    if (!allocation) {
-      console.error(`No allocation found for wallet: ${walletAddress}`);
-      throw new Error("No token allocation found for this wallet");
+  const walletAddress = userAddress.toLowerCase();
+  console.log(`Attempting to claim tokens for: ${walletAddress}`);
+  
+  if (isDevelopment) {
+    // Development mode: simulate claiming from localStorage
+    try {
+      // Always reload from localStorage to ensure we have the latest data
+      tokenAllocations = loadTokenAllocations();
+      
+      console.log("Before claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
+      const allocation = tokenAllocations.get(walletAddress);
+      
+      console.log(`Token allocation for ${walletAddress}: ${allocation || 'None'}`);
+      
+      if (!allocation) {
+        console.error(`No allocation found for wallet: ${walletAddress}`);
+        throw new Error("No token allocation found for this wallet");
+      }
+      
+      // Simulate a delay for the transaction
+      console.log("Processing token claim transaction...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Remove the allocation after claiming
+      tokenAllocations.delete(walletAddress);
+      // Save updated allocations to localStorage
+      saveTokenAllocations(tokenAllocations);
+      
+      // Verify the allocation was actually removed
+      const verifyAllocation = loadTokenAllocations().get(walletAddress);
+      if (verifyAllocation) {
+        console.error("Failed to remove allocation from localStorage!");
+      } else {
+        console.log("Allocation successfully removed from localStorage");
+      }
+      
+      console.log(`Successfully claimed tokens for ${walletAddress}. Allocation removed.`);
+      console.log("After claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
+      
+      return true;
+    } catch (error) {
+      console.error("Error claiming tokens:", error);
+      throw error;
     }
-    
-    // Simulate a delay for the transaction
-    console.log("Processing token claim transaction...");
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // In a real implementation, this would call a backend API
-    /* 
-    const response = await fetch('/api/claim-tokens', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ walletAddress }),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to claim tokens');
+  } else {
+    // Production mode: use backend API
+    try {
+      await api.claimTokens(walletAddress);
+      console.log(`Successfully claimed tokens for ${walletAddress} via API`);
+      return true;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
     }
-    */
-    
-    // For demo purposes, remove the allocation after claiming
-    tokenAllocations.delete(walletAddress);
-    // Save updated allocations to localStorage
-    saveTokenAllocations(tokenAllocations);
-    
-    // Verify the allocation was actually removed
-    const verifyAllocation = loadTokenAllocations().get(walletAddress);
-    if (verifyAllocation) {
-      console.error("Failed to remove allocation from localStorage!");
-    } else {
-      console.log("Allocation successfully removed from localStorage");
-    }
-    
-    console.log(`Successfully claimed tokens for ${walletAddress}. Allocation removed.`);
-    console.log("After claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
-    
-    return true;
-  } catch (error) {
-    console.error("Error claiming tokens:", error);
-    throw error;
   }
 };
 
 // Distribute tokens function (for admin use)
 export const distributeTokens = async (wallets: string[], amount: string): Promise<void> => {
-  if (!wallets || wallets.length === 0 || !amount || isNaN(Number(amount))) {
-    throw new Error("Invalid wallets or amount");
-  }
-  
+  // This is just a wrapper around setTokenAllocations for now
+  await setTokenAllocations(wallets, amount);
+  console.log(`Tokens successfully allocated for distribution`);
+};
+
+// Get token balance for a wallet (read-only operation)
+export const getTokenBalance = async (address: string): Promise<string> => {
   try {
-    console.log(`Distributing ${amount} tokens to ${wallets.length} wallets`);
+    // Get web3 instance (read-only is fine for this operation)
+    const web3 = window.ethereum ? await getWeb3() : getWeb3ReadOnly();
     
-    // Add wallets to eligible list
-    setTokenAllocations(wallets, amount);
+    // Create contract instance
+    const tokenContract = new web3.eth.Contract(tokenABI as any, TOKEN_CONTRACT_ADDRESS);
     
-    // Simulating a delay for the transaction
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Call balanceOf function
+    const balance = await tokenContract.methods.balanceOf(address).call();
     
-    // In a real implementation, you would make an API call to your backend
-    /* 
-    const response = await fetch('/api/distribute-tokens', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ wallets, amount }),
-    });
+    // Convert from wei to tokens (assuming 18 decimals)
+    const tokenBalance = web3.utils.fromWei(balance, 'ether');
     
-    if (!response.ok) {
-      throw new Error('Failed to distribute tokens');
-    }
-    */
-    
-    console.log("Token distribution completed successfully");
-    console.log("Current allocations after distribution:", Object.fromEntries(tokenAllocations.entries()));
-    return;
+    console.log(`Token balance for ${address}: ${tokenBalance}`);
+    return tokenBalance;
   } catch (error) {
-    console.error("Error distributing tokens:", error);
-    throw error;
+    console.error("Error getting token balance:", error);
+    return "0";
   }
 };
