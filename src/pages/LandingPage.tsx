@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Coins, Shield, Wallet, ChevronRight, LockKeyhole } from 'lucide-react';
+import { Coins, Shield, Wallet, ChevronRight, LockKeyhole, ExternalLink } from 'lucide-react';
 
 const LandingPage = () => {
   return (
@@ -38,10 +38,10 @@ const LandingPage = () => {
         />
       </div>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <motion.header 
-          className="flex justify-center mb-16"
+          className="flex justify-between items-center mb-16"
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
@@ -51,7 +51,7 @@ const LandingPage = () => {
             whileHover={{ scale: 1.05 }}
           >
             <img 
-              src="/lovable-uploads/55c1fa87-ffb2-4f0e-bb39-ec887581cc35.png" 
+              src="/lovable-uploads/6357ffde-af06-41f1-9813-fe22200611fb.png" 
               alt="Web3D Logo" 
               className="w-12 h-12 rounded-lg"
             />
@@ -59,6 +59,10 @@ const LandingPage = () => {
               Web3D Token Platform
             </h1>
           </motion.div>
+          <nav className="hidden md:flex gap-6">
+            <Link to="/claim" className="text-white hover:text-purple-400 transition-colors">Claim</Link>
+            <Link to="/admin" className="text-white hover:text-purple-400 transition-colors">Admin</Link>
+          </nav>
         </motion.header>
 
         {/* Hero Section */}
@@ -78,24 +82,21 @@ const LandingPage = () => {
               The secure and efficient platform for Web3D token distribution and claiming on Binance Smart Chain.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link to="/claim">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                  <Button size="lg" className="gradient-bg hover:opacity-90 w-full sm:w-auto gap-2">
-                    <Coins className="w-5 h-5" />
-                    Claim Tokens
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-              </Link>
-              <Link to="/admin">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                  <Button size="lg" variant="outline" className="border-purple-500/30 hover:bg-purple-500/10 w-full sm:w-auto gap-2">
-                    <LockKeyhole className="w-5 h-5" />
-                    Admin Access
-                  </Button>
-                </motion.div>
-              </Link>
+            {/* BSC Logo */}
+            <div className="flex items-center gap-3 py-4">
+              <motion.div 
+                className="flex items-center"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+              >
+                <img 
+                  src="/lovable-uploads/2e0f3653-10d2-4040-8ec7-a5ff9e777abe.png" 
+                  alt="BSC Logo" 
+                  className="h-10 w-10"
+                />
+                <span className="ml-2 font-medium">BSC Network</span>
+              </motion.div>
             </div>
           </motion.div>
           
@@ -125,6 +126,35 @@ const LandingPage = () => {
             </motion.div>
           </motion.div>
         </div>
+        
+        {/* Large Claim Button */}
+        <motion.div 
+          className="flex justify-center mb-16"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <Link to="/claim">
+            <motion.div 
+              className="relative"
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.98 }}
+            >
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 opacity-70 blur-md -z-10"></div>
+              
+              {/* Button */}
+              <Button 
+                size="lg" 
+                className="gradient-bg text-xl md:text-2xl py-8 px-12 rounded-xl shadow-lg neo-button gap-3"
+              >
+                <Coins className="w-8 h-8" />
+                CLAIM WEB3D TOKENS
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            </motion.div>
+          </Link>
+        </motion.div>
 
         {/* Features Section */}
         <motion.div 
@@ -171,14 +201,56 @@ const LandingPage = () => {
 
         {/* Contract Info */}
         <motion.div
-          className="text-center max-w-2xl mx-auto"
+          className="glass-card p-6 rounded-xl max-w-4xl mx-auto mb-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
         >
-          <h3 className="text-xl font-semibold mb-2">Contract Information</h3>
-          <p className="text-sm text-muted-foreground">Web3D Token Contract: 0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7</p>
-          <p className="text-sm text-muted-foreground">Network: Binance Smart Chain (BSC)</p>
+          <h3 className="text-xl font-semibold mb-4 text-center">Contract Information</h3>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-4">
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/2e0f3653-10d2-4040-8ec7-a5ff9e777abe.png" 
+                alt="BSC Logo" 
+                className="h-8 w-8 mr-2"
+              />
+              <span>Binance Smart Chain</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-sm text-muted-foreground">Contract: 
+                <span className="ml-1 text-purple-400 hover:text-pink-400 transition-colors">
+                  0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7
+                </span>
+              </span>
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 15 }}
+                transition={{ duration: 0.2 }}
+                className="ml-1 cursor-pointer"
+                onClick={() => window.open(`https://bscscan.com/address/0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7`, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+        
+        {/* Footer with Admin Access */}
+        <motion.div
+          className="text-center pt-4 border-t border-gray-800"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 1 }}
+        >
+          <Link to="/admin">
+            <motion.div 
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-white"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LockKeyhole className="h-4 w-4 mr-1" />
+              Admin Access
+            </motion.div>
+          </Link>
         </motion.div>
       </div>
     </div>
