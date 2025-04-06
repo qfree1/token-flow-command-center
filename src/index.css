@@ -68,11 +68,6 @@
   }
 }
 
-/* Yellow theme for BSC integration */
-.bsc-gradient {
-  background: linear-gradient(135deg, #F3BA2F 0%, #F0B90B 100%);
-}
-
 .gradient-bg {
   background: linear-gradient(135deg, rgba(103, 58, 183, 0.8), rgba(233, 30, 99, 0.8));
 }
@@ -92,10 +87,6 @@
 
 .glow-text {
   text-shadow: 0 0 10px rgba(233, 30, 99, 0.7);
-}
-
-.glow-yellow {
-  box-shadow: 0 0 20px rgba(243, 186, 47, 0.5);
 }
 
 .cyber-grid {
@@ -147,13 +138,6 @@
   color: transparent;
 }
 
-.bsc-text-gradient {
-  background: linear-gradient(to right, #F3BA2F, #F0B90B);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 .neo-button {
   position: relative;
   overflow: hidden;
@@ -175,39 +159,4 @@
 .neo-button:hover::after {
   transform: translateX(100%);
   transition: transform 0.6s linear;
-}
-
-/* Big claim button styles */
-.claim-button {
-  position: relative;
-  padding: 1.5rem 3rem;
-  font-size: 1.5rem;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: white;
-  background: linear-gradient(135deg, rgba(103, 58, 183, 0.8), rgba(233, 30, 99, 0.8));
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 0 30px rgba(233, 30, 99, 0.5);
-}
-
-.claim-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: shine 3s infinite;
-}
-
-@keyframes shine {
-  from {
-    left: -100%;
-  }
-  to {
-    left: 100%;
-  }
 }

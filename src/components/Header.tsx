@@ -30,7 +30,7 @@ const Header: React.FC = () => {
             transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
           >
             <img 
-              src="/lovable-uploads/55c1fa87-ffb2-4f0e-bb39-ec887581cc35.png" 
+              src="/lovable-uploads/6357ffde-af06-41f1-9813-fe22200611fb.png" 
               alt="Web3D Logo" 
               className="w-full h-full"
             />
@@ -38,31 +38,18 @@ const Header: React.FC = () => {
         </motion.div>
       </div>
       
-      <motion.div className="flex items-center justify-center gap-2 mb-2">
-        <motion.h1 
-          className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#673AB7] to-[#E91E63] tracking-tight"
-          animate={{ 
-            textShadow: ["0 0 8px rgba(103, 58, 183, 0.7)", "0 0 15px rgba(233, 30, 99, 0.7)", "0 0 8px rgba(103, 58, 183, 0.7)"]
-          }}
-          transition={{ duration: 3, repeat: Infinity }}
-        >
-          Token Flow Command Center
-        </motion.h1>
-        
-        <motion.div
-          whileHover={{ rotate: 360, scale: 1.1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <img 
-            src="/lovable-uploads/2e0f3653-10d2-4040-8ec7-a5ff9e777abe.png" 
-            alt="BSC Logo" 
-            className="h-8 w-8"
-          />
-        </motion.div>
-      </motion.div>
+      <motion.h1 
+        className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#673AB7] to-[#E91E63] tracking-tight"
+        animate={{ 
+          textShadow: ["0 0 8px rgba(103, 58, 183, 0.7)", "0 0 15px rgba(233, 30, 99, 0.7)", "0 0 8px rgba(103, 58, 183, 0.7)"]
+        }}
+        transition={{ duration: 3, repeat: Infinity }}
+      >
+        Token Flow Command Center
+      </motion.h1>
       <p className="text-muted-foreground mt-2 flex items-center justify-center gap-2">
         <Network className="h-4 w-4 text-[#E91E63]" />
-        <span>Manage and distribute Web3D tokens securely on BSC</span>
+        <span>Manage and distribute Web3D tokens securely</span>
       </p>
     </motion.header>
   );
