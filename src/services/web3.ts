@@ -362,8 +362,14 @@ export const getTokenBalance = async (address: string): Promise<string> => {
     // Call balanceOf function
     const balance = await tokenContract.methods.balanceOf(address).call();
     
+    // Make sure balance is valid before converting
+    if (balance === undefined || balance === null) {
+      return "0";
+    }
+    
     // Convert from wei to tokens (assuming 18 decimals)
-    const tokenBalance = web3.utils.fromWei(balance, 'ether');
+    // Ensure balance is passed as a string to avoid type issues
+    const tokenBalance = web3.utils.fromWei(String(balance), 'ether');
     
     console.log(`Token balance for ${address}: ${tokenBalance}`);
     return tokenBalance;
