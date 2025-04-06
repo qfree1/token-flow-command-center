@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
-import { Check, Loader } from 'lucide-react';
+import { Check, Loader, Users, Coins, Send, Lock } from 'lucide-react';
 
 interface TokenFormProps {
   onSubmit: (wallets: string[], amount: string) => Promise<void>;
@@ -86,22 +85,37 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
       <Card className="glass-card w-full max-w-md mx-auto">
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle className="text-center text-2xl font-bold">Allocate Tokens</CardTitle>
+            <CardTitle className="text-center text-2xl font-bold flex items-center justify-center gap-2">
+              <motion.div
+                animate={{ rotate: [0, 10, 0, -10, 0] }}
+                transition={{ duration: 5, repeat: Infinity }}
+              >
+                <Send className="h-6 w-6" />
+              </motion.div>
+              Allocate Tokens
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="wallets">Wallet List (comma-separated)</Label>
+              <Label htmlFor="wallets" className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                Wallet List (comma-separated)
+              </Label>
               <Textarea
                 id="wallets"
                 placeholder="0x1234...,0x5678..."
                 value={walletList}
                 onChange={(e) => setWalletList(e.target.value)}
-                className="min-h-[100px] bg-background border-input"
+                className="min-h-[100px] bg-background border-input focus-visible:ring-purple-500"
                 disabled={disabled || loading}
               />
+              <p className="text-xs text-muted-foreground">Add wallet addresses separated by commas</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Token Amount (per wallet)</Label>
+              <Label htmlFor="amount" className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-muted-foreground" />
+                Token Amount (per wallet)
+              </Label>
               <Input
                 id="amount"
                 placeholder="100"
@@ -111,23 +125,44 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
                 value={tokenAmount}
                 onChange={(e) => setTokenAmount(e.target.value)}
                 disabled={disabled || loading}
-                className="bg-background border-input"
+                className="bg-background border-input focus-visible:ring-purple-500"
               />
+              <p className="text-xs text-muted-foreground">Specify how many tokens each wallet will receive</p>
             </div>
           </CardContent>
           <CardFooter>
-            <Button 
-              type="submit" 
-              className="w-full gradient-bg hover:opacity-90 transition-opacity"
-              disabled={disabled || loading}
+            <motion.div 
+              whileHover={!disabled ? { scale: 1.02 } : {}}
+              whileTap={!disabled ? { scale: 0.98 } : {}}
+              className="w-full"
             >
-              {loading ? (
-                <Loader className="h-5 w-5 animate-spin mr-2" />
-              ) : (
-                <Check className="h-5 w-5 mr-2" />
-              )}
-              Allocate Tokens for Claiming
-            </Button>
+              <Button 
+                type="submit" 
+                className="w-full gradient-bg hover:opacity-90 transition-opacity"
+                disabled={disabled || loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader className="h-5 w-5 animate-spin mr-2" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {disabled ? (
+                      <motion.div 
+                        animate={{ x: [0, 2, 0, -2, 0] }}
+                        transition={{ duration: 0.5, repeat: Infinity }}
+                      >
+                        <Lock className="h-5 w-5 mr-2" />
+                      </motion.div>
+                    ) : (
+                      <Check className="h-5 w-5 mr-2" />
+                    )}
+                    Allocate Tokens for Claiming
+                  </>
+                )}
+              </Button>
+            </motion.div>
           </CardFooter>
         </form>
       </Card>
