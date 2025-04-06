@@ -66,16 +66,23 @@ export const isAdminWallet = (address: string): boolean => {
   return address.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
 };
 
-// Load token allocations from localStorage with better error handling
+// Load token allocations from localStorage with improved error handling and debugging
 const loadTokenAllocations = (): Map<string, string> => {
   try {
     const saved = localStorage.getItem('tokenAllocations');
-    if (!saved) return new Map();
+    console.log("Raw localStorage for tokenAllocations:", saved);
+    
+    if (!saved) {
+      console.log("No token allocations found in localStorage");
+      return new Map();
+    }
     
     // Convert from saved JSON object format back to Map
     const parsed = JSON.parse(saved);
-    console.log("Loaded token allocations:", parsed);
-    return new Map(Object.entries(parsed));
+    const allocations = new Map(Object.entries(parsed));
+    
+    console.log("Successfully loaded token allocations:", Object.fromEntries(allocations.entries()));
+    return allocations;
   } catch (error) {
     console.error("Error loading token allocations:", error);
     // If there's an error, return an empty Map rather than letting the error propagate
@@ -83,13 +90,20 @@ const loadTokenAllocations = (): Map<string, string> => {
   }
 };
 
-// Save token allocations to localStorage with better error handling
+// Save token allocations to localStorage with improved error handling
 const saveTokenAllocations = (allocations: Map<string, string>): void => {
   try {
+    if (!allocations || allocations.size === 0) {
+      console.log("Warning: Attempting to save empty token allocations");
+    }
+    
     // Convert Map to plain object for JSON serialization
     const allocationsObject = Object.fromEntries(allocations.entries());
-    localStorage.setItem('tokenAllocations', JSON.stringify(allocationsObject));
-    console.log("Saved token allocations:", allocationsObject);
+    const jsonString = JSON.stringify(allocationsObject);
+    
+    localStorage.setItem('tokenAllocations', jsonString);
+    console.log("Successfully saved token allocations:", allocationsObject);
+    console.log("JSON string saved to localStorage:", jsonString);
   } catch (error) {
     console.error("Error saving token allocations:", error);
   }
@@ -108,10 +122,15 @@ export const setTokenAllocations = (wallets: string[], amount: string): void => 
   // First, ensure we have the latest allocations
   tokenAllocations = loadTokenAllocations();
 
+  console.log("Setting allocations for wallets:", wallets);
+  console.log("Amount per wallet:", amount);
+  
   let validWallets = 0;
   wallets.forEach(wallet => {
     if (wallet && wallet.startsWith('0x') && wallet.length === 42) {
-      tokenAllocations.set(wallet.toLowerCase(), amount);
+      const normalizedWallet = wallet.toLowerCase();
+      tokenAllocations.set(normalizedWallet, amount);
+      console.log(`Added allocation for wallet ${normalizedWallet}: ${amount} tokens`);
       validWallets++;
     } else {
       console.error("Invalid wallet address:", wallet);
@@ -121,6 +140,10 @@ export const setTokenAllocations = (wallets: string[], amount: string): void => 
   // Save updated allocations to localStorage
   saveTokenAllocations(tokenAllocations);
   
+  // Force a reload from localStorage to verify persistence
+  const reloaded = loadTokenAllocations();
+  console.log(`Verification - Reloaded allocations after save:`, Object.fromEntries(reloaded.entries()));
+  
   // Log confirmation for debugging
   console.log(`Set allocations for ${validWallets} wallets. Current allocations:`, 
     Object.fromEntries(tokenAllocations.entries()));
@@ -129,16 +152,18 @@ export const setTokenAllocations = (wallets: string[], amount: string): void => 
 // Function for users to check if they have an allocation
 export const checkTokenAllocation = async (address: string): Promise<string | null> => {
   if (!address || !address.startsWith('0x') || address.length !== 42) {
-    console.error("Invalid wallet address for allocation check");
+    console.error("Invalid wallet address for allocation check:", address);
     return null;
   }
   
-  // Reload from localStorage to ensure we have the latest data
+  // Always reload from localStorage to ensure we have the latest data
   tokenAllocations = loadTokenAllocations();
   const walletAddress = address.toLowerCase();
   
+  console.log(`Checking allocation for wallet: ${walletAddress}`);
   const allocation = tokenAllocations.get(walletAddress);
-  console.log(`Checking allocation for ${walletAddress}: ${allocation || 'None'}`);
+  
+  console.log(`Allocation result for ${walletAddress}: ${allocation || 'None'}`);
   console.log("All current allocations:", Object.fromEntries(tokenAllocations.entries()));
   
   return allocation || null;
@@ -152,20 +177,24 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
   }
   
   try {
-    // Reload from localStorage to ensure we have the latest data
+    console.log(`Attempting to claim tokens for: ${userAddress}`);
+    
+    // Always reload from localStorage to ensure we have the latest data
     tokenAllocations = loadTokenAllocations();
     const walletAddress = userAddress.toLowerCase();
     
     console.log("Before claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
     const allocation = tokenAllocations.get(walletAddress);
     
-    console.log(`Claiming tokens for ${walletAddress}, allocation: ${allocation || 'None'}`);
+    console.log(`Token allocation for ${walletAddress}: ${allocation || 'None'}`);
     
     if (!allocation) {
+      console.error(`No allocation found for wallet: ${walletAddress}`);
       throw new Error("No token allocation found for this wallet");
     }
     
     // Simulate a delay for the transaction
+    console.log("Processing token claim transaction...");
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     // In a real implementation, this would call a backend API
@@ -187,6 +216,14 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
     tokenAllocations.delete(walletAddress);
     // Save updated allocations to localStorage
     saveTokenAllocations(tokenAllocations);
+    
+    // Verify the allocation was actually removed
+    const verifyAllocation = loadTokenAllocations().get(walletAddress);
+    if (verifyAllocation) {
+      console.error("Failed to remove allocation from localStorage!");
+    } else {
+      console.log("Allocation successfully removed from localStorage");
+    }
     
     console.log(`Successfully claimed tokens for ${walletAddress}. Allocation removed.`);
     console.log("After claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
