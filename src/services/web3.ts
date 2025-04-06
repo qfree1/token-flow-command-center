@@ -74,19 +74,30 @@ const loadTokenAllocations = (): Map<string, string> => {
     
     if (!saved) {
       console.log("No token allocations found in localStorage");
-      return new Map();
+      return new Map<string, string>();
     }
     
-    // Convert from saved JSON object format back to Map
+    // Convert from saved JSON object format back to Map with proper type checking
     const parsed = JSON.parse(saved);
-    const allocations = new Map(Object.entries(parsed));
+    if (typeof parsed !== 'object' || parsed === null) {
+      console.error("Invalid data format in localStorage:", parsed);
+      return new Map<string, string>();
+    }
+    
+    // Ensure we're properly typing the entries as [string, string]
+    const entries = Object.entries(parsed).map(([key, value]) => {
+      // Ensure value is a string
+      return [key, String(value)] as [string, string];
+    });
+    
+    const allocations = new Map<string, string>(entries);
     
     console.log("Successfully loaded token allocations:", Object.fromEntries(allocations.entries()));
     return allocations;
   } catch (error) {
     console.error("Error loading token allocations:", error);
     // If there's an error, return an empty Map rather than letting the error propagate
-    return new Map();
+    return new Map<string, string>();
   }
 };
 
