@@ -66,11 +66,6 @@ export const isAdminWallet = (address: string): boolean => {
   return address.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
 };
 
-// Add the checkIfAdmin function that was missing
-export const checkIfAdmin = async (address: string): Promise<boolean> => {
-  return isAdminWallet(address);
-};
-
 // Store eligible wallets and their allocations
 let tokenAllocations: Map<string, string> = new Map();
 
