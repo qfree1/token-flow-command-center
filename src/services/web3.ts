@@ -1,3 +1,4 @@
+
 import Web3 from 'web3';
 
 // ABI for ERC20 token (simplified)
@@ -65,18 +66,48 @@ export const isAdminWallet = (address: string): boolean => {
   return address.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
 };
 
-// Store eligible wallets and their allocations
-let tokenAllocations: Map<string, string> = new Map();
+// Load token allocations from localStorage
+const loadTokenAllocations = (): Map<string, string> => {
+  const saved = localStorage.getItem('tokenAllocations');
+  if (!saved) return new Map();
+  
+  try {
+    // Convert from saved JSON object format back to Map
+    const parsed = JSON.parse(saved);
+    return new Map(Object.entries(parsed));
+  } catch (error) {
+    console.error("Error loading token allocations:", error);
+    return new Map();
+  }
+};
+
+// Save token allocations to localStorage
+const saveTokenAllocations = (allocations: Map<string, string>): void => {
+  try {
+    // Convert Map to plain object for JSON serialization
+    const allocationsObject = Object.fromEntries(allocations.entries());
+    localStorage.setItem('tokenAllocations', JSON.stringify(allocationsObject));
+  } catch (error) {
+    console.error("Error saving token allocations:", error);
+  }
+};
+
+// Initialize token allocations from localStorage
+let tokenAllocations = loadTokenAllocations();
 
 // Function for admin to set token allocations
 export const setTokenAllocations = (wallets: string[], amount: string): void => {
   wallets.forEach(wallet => {
     tokenAllocations.set(wallet.toLowerCase(), amount);
   });
+  // Save updated allocations to localStorage
+  saveTokenAllocations(tokenAllocations);
 };
 
 // Function for users to check if they have an allocation
 export const checkTokenAllocation = async (address: string): Promise<string | null> => {
+  // Reload from localStorage to ensure we have the latest data
+  tokenAllocations = loadTokenAllocations();
   const walletAddress = address.toLowerCase();
   return tokenAllocations.get(walletAddress) || null;
 };
@@ -84,7 +115,10 @@ export const checkTokenAllocation = async (address: string): Promise<string | nu
 // Function for users to claim their tokens
 export const claimTokens = async (userAddress: string): Promise<boolean> => {
   try {
-    const allocation = tokenAllocations.get(userAddress.toLowerCase());
+    // Reload from localStorage to ensure we have the latest data
+    tokenAllocations = loadTokenAllocations();
+    const walletAddress = userAddress.toLowerCase();
+    const allocation = tokenAllocations.get(walletAddress);
     
     if (!allocation) {
       throw new Error("No token allocation found for this wallet");
@@ -100,7 +134,7 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ walletAddress: userAddress }),
+      body: JSON.stringify({ walletAddress }),
     });
     
     if (!response.ok) {
@@ -109,7 +143,9 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
     */
     
     // For demo purposes, remove the allocation after claiming
-    tokenAllocations.delete(userAddress.toLowerCase());
+    tokenAllocations.delete(walletAddress);
+    // Save updated allocations to localStorage
+    saveTokenAllocations(tokenAllocations);
     
     return true;
   } catch (error) {
