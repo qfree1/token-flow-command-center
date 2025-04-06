@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Coins, Shield, Wallet, ChevronRight, LockKeyhole } from 'lucide-react';
+import { Coins, Shield, Wallet, ChevronRight, LockKeyhole, Star, ExternalLink } from 'lucide-react';
 
 const LandingPage = () => {
   return (
@@ -61,70 +61,67 @@ const LandingPage = () => {
           </motion.div>
         </motion.header>
 
-        {/* Hero Section */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 mb-16">
+        {/* Hero Section with Larger Claim Token Button */}
+        <div className="flex flex-col items-center justify-center gap-8 mb-24 text-center">
           <motion.div 
-            className="flex-1 space-y-6"
-            initial={{ x: -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-6 max-w-3xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              <span className="text-white">Manage & Claim </span>
+              <span className="text-white">Claim Your </span>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">Web3D Tokens</span>
             </h2>
             
-            <p className="text-lg md:text-xl text-muted-foreground max-w-xl">
-              The secure and efficient platform for Web3D token distribution and claiming on Binance Smart Chain.
+            <p className="text-lg md:text-xl text-muted-foreground mx-auto max-w-2xl">
+              Connect your wallet and claim your Web3D tokens on Binance Smart Chain in just a few simple steps.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link to="/claim">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                  <Button size="lg" className="gradient-bg hover:opacity-90 w-full sm:w-auto gap-2">
-                    <Coins className="w-5 h-5" />
-                    Claim Tokens
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-              </Link>
-              <Link to="/admin">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                  <Button size="lg" variant="outline" className="border-purple-500/30 hover:bg-purple-500/10 w-full sm:w-auto gap-2">
-                    <LockKeyhole className="w-5 h-5" />
-                    Admin Access
-                  </Button>
-                </motion.div>
-              </Link>
-            </div>
           </motion.div>
           
           <motion.div 
-            className="flex-1 flex justify-center"
-            initial={{ x: 100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="w-full max-w-lg"
           >
-            <motion.div 
-              className="relative w-64 h-64 md:w-80 md:h-80"
-              animate={{ rotate: 360 }}
-              transition={{ 
-                duration: 30, 
-                repeat: Infinity, 
-                ease: "linear" 
-              }}
-            >
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 opacity-70 blur-lg" />
-              <div className="absolute inset-4 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 opacity-80 flex items-center justify-center">
-                <img 
-                  src="/lovable-uploads/55c1fa87-ffb2-4f0e-bb39-ec887581cc35.png" 
-                  alt="Web3D Token" 
-                  className="w-24 h-24 rounded-xl"
-                />
-              </div>
-            </motion.div>
+            <Link to="/claim">
+              <motion.div 
+                whileHover={{ scale: 1.03 }} 
+                whileTap={{ scale: 0.98 }}
+                className="w-full"
+              >
+                <Button size="lg" className="w-full py-8 text-xl gradient-bg hover:opacity-90 gap-3 rounded-xl shadow-lg shadow-purple-500/30">
+                  <Coins className="w-8 h-8" />
+                  Claim Your Tokens Now
+                  <ChevronRight className="w-6 h-6" />
+                </Button>
+              </motion.div>
+            </Link>
           </motion.div>
         </div>
+
+        {/* BSC Network Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="flex flex-col items-center justify-center mb-20"
+        >
+          <div className="glass-card p-6 rounded-xl max-w-md mx-auto text-center">
+            <div className="flex justify-center mb-4">
+              <img 
+                src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" 
+                alt="BSC Logo" 
+                className="w-16 h-16"
+              />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Running on Binance Smart Chain</h3>
+            <p className="text-muted-foreground">
+              Fast transactions with minimal fees on BSC network
+            </p>
+          </div>
+        </motion.div>
 
         {/* Features Section */}
         <motion.div 
@@ -141,13 +138,13 @@ const LandingPage = () => {
             },
             {
               icon: <Shield className="h-8 w-8 text-pink-400" />,
-              title: "Secure Administration",
-              description: "Admin panel with secure wallet authentication for token distribution management."
+              title: "Secure Transactions",
+              description: "All token claims are securely processed and verified on the blockchain."
             },
             {
-              icon: <Coins className="h-8 w-8 text-blue-400" />,
-              title: "BSC Compatibility",
-              description: "Built for Binance Smart Chain, ensuring fast and low-cost transactions."
+              icon: <Star className="h-8 w-8 text-blue-400" />,
+              title: "Token Benefits",
+              description: "Access exclusive features and services with your Web3D tokens."
             }
           ].map((feature, index) => (
             <motion.div 
@@ -171,7 +168,7 @@ const LandingPage = () => {
 
         {/* Contract Info */}
         <motion.div
-          className="text-center max-w-2xl mx-auto"
+          className="text-center max-w-2xl mx-auto mb-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
@@ -181,6 +178,29 @@ const LandingPage = () => {
           <p className="text-sm text-muted-foreground">Network: Binance Smart Chain (BSC)</p>
         </motion.div>
       </div>
+
+      {/* Footer with Admin Access */}
+      <footer className="w-full border-t border-border py-8 mt-16">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <p className="text-sm text-muted-foreground">© 2025 Web3D Token Platform. All rights reserved.</p>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <Link to="https://bscscan.com" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1">
+                <ExternalLink className="h-4 w-4" />
+                BSC Explorer
+              </Link>
+              
+              <Link to="/admin" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <LockKeyhole className="h-4 w-4" />
+                Admin Panel
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
