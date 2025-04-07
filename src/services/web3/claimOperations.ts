@@ -182,12 +182,17 @@ export const getContractTokenBalance = async (): Promise<string> => {
     }
     
     const claimContract = await getClaimContract();
-    // Get the token address and validate it properly
-    const tokenAddress = await claimContract.methods.web3dToken().call();
     
-    if (!tokenAddress || typeof tokenAddress !== 'string') {
-      throw new Error("Invalid token address returned from contract");
+    // Get the token address with proper type handling
+    const tokenAddressResult = await claimContract.methods.web3dToken().call();
+    
+    // Make sure we have a valid token address
+    if (!tokenAddressResult) {
+      throw new Error("Failed to get token address from contract");
     }
+    
+    // Safely convert to string
+    const tokenAddress = String(tokenAddressResult);
     
     // Create token contract instance
     const tokenContract = new web3.eth.Contract(
@@ -195,11 +200,11 @@ export const getContractTokenBalance = async (): Promise<string> => {
       tokenAddress
     );
     
-    // Get balance of claim contract and ensure we're handling the type correctly
+    // Get balance of claim contract with proper type handling
     const balanceInWei = await tokenContract.methods.balanceOf(CLAIM_CONTRACT_ADDRESS).call();
     
-    // Make sure balanceInWei is properly converted to string before using fromWei
-    const balanceStr = typeof balanceInWei === 'undefined' ? '0' : String(balanceInWei);
+    // Safely convert to string before using fromWei
+    const balanceStr = String(balanceInWei || '0');
     const balance = web3.utils.fromWei(balanceStr, 'ether');
     
     return balance;
@@ -223,7 +228,7 @@ export const checkUsersInClaimList = async (addresses: string[]): Promise<{[addr
           const claimed = await claimContract.methods.claimed(address).call();
           
           const web3 = new Web3();
-          const amount = claimed ? "0 (Claimed)" : web3.utils.fromWei(String(amountInWei), 'ether');
+          const amount = claimed ? "0 (Claimed)" : web3.utils.fromWei(String(amountInWei || '0'), 'ether');
           
           result[address] = amount;
         } catch (err) {
@@ -254,12 +259,17 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
     
     // Get claim contract instance to get token address
     const claimContract = await getClaimContract();
-    // Get the token address and validate it properly
-    const tokenAddress = await claimContract.methods.web3dToken().call();
     
-    if (!tokenAddress || typeof tokenAddress !== 'string') {
-      throw new Error("Invalid token address returned from contract");
+    // Get the token address with proper type handling
+    const tokenAddressResult = await claimContract.methods.web3dToken().call();
+    
+    // Make sure we have a valid token address
+    if (!tokenAddressResult) {
+      throw new Error("Failed to get token address from contract");
     }
+    
+    // Safely convert to string
+    const tokenAddress = String(tokenAddressResult);
     
     // Create token contract instance
     const tokenContract = new web3.eth.Contract(
@@ -270,10 +280,11 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
     // Convert amount to wei
     const amountInWei = web3.utils.toWei(amount, 'ether');
     
-    // Check admin balance first and ensure proper type handling
+    // Check admin balance first with proper type handling
     const adminBalance = await tokenContract.methods.balanceOf(adminAddress).call();
-    // Convert adminBalance to string to safely compare with BigInt
-    const adminBalanceStr = String(adminBalance);
+    
+    // Safely convert to string for BigInt comparison
+    const adminBalanceStr = String(adminBalance || '0');
     
     if (BigInt(adminBalanceStr) < BigInt(amountInWei)) {
       throw new Error("Insufficient token balance");
