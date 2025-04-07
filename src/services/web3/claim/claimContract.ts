@@ -15,7 +15,11 @@ export const getClaimContract = async (requireSigner = false) => {
     
     // Check if address is empty or zero address - using correct string comparisons
     const emptyAddress = '0x0000000000000000000000000000000000000000';
-    if (!CLAIM_CONTRACT_ADDRESS || CLAIM_CONTRACT_ADDRESS === emptyAddress) {
+    // Convert both to lowercase strings for proper comparison
+    const contractAddressLower = CLAIM_CONTRACT_ADDRESS.toLowerCase();
+    const emptyAddressLower = emptyAddress.toLowerCase();
+    
+    if (!CLAIM_CONTRACT_ADDRESS || contractAddressLower === emptyAddressLower) {
       throw new Error("Invalid claim contract address");
     }
     

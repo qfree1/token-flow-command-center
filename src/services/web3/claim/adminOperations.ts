@@ -1,3 +1,4 @@
+
 import Web3 from 'web3';
 import { claimContractABI, CLAIM_CONTRACT_ADDRESS, tokenABI } from '../constants';
 import { getWeb3, isAdminWallet } from '../web3Provider';
@@ -46,6 +47,7 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       
       // Apply gas boost (20%)
       const boostedGasPriceGwei = Math.ceil(gasPriceGwei * 1.2);
+      // Convert to string to fix the bigint type error
       const boostedGasPriceWei = web3.utils.toWei(String(boostedGasPriceGwei), 'gwei');
       console.log("Boosted gas price (Gwei):", boostedGasPriceGwei);
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -8,8 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { ClipboardList, Loader, CheckCircle, AlertCircle, Bug } from 'lucide-react';
 import TokenProgressIndicator from '../token/TokenProgressIndicator';
-import { setClaimList } from '@/services/web3';
-import { CLAIM_CONTRACT_ADDRESS } from '@/services/web3/constants';
+import { setClaimList, CLAIM_CONTRACT_ADDRESS } from '@/services/web3';
 import Web3 from 'web3';
 
 interface ClaimListFormProps {
