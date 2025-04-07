@@ -1,3 +1,4 @@
+
 import Web3 from 'web3';
 import { claimContractABI, CLAIM_CONTRACT_ADDRESS, isDevelopment, tokenABI } from './constants';
 import { getWeb3, isAdminWallet } from './web3Provider';
@@ -307,7 +308,7 @@ export const debugClaimContract = async (address: string): Promise<any> => {
     
     console.log("Contract exists at the address");
     
-    // Create contract instance
+    // Create contract instance - FIX: Provide contract address as second parameter
     const claimContract = new web3.eth.Contract(claimContractABI as any, CLAIM_CONTRACT_ADDRESS);
     
     // Get token address
@@ -323,8 +324,8 @@ export const debugClaimContract = async (address: string): Promise<any> => {
     
     return {
       contractAddress: CLAIM_CONTRACT_ADDRESS,
-      tokenAddress,
-      adminAddress,
+      tokenAddress: String(tokenAddress),  // FIX: Ensure tokenAddress is converted to string
+      adminAddress: String(adminAddress),  // FIX: Ensure adminAddress is converted to string
       userAddress: address,
       claimAmount: web3.utils.fromWei(String(claimAmount || '0'), 'ether'),
       hasClaimed
