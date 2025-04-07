@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
-import { Check, Loader, Users, Coins, Send, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Send } from 'lucide-react';
+import TokenFormFields from './token/TokenFormFields';
+import TokenProgressIndicator from './token/TokenProgressIndicator';
+import TokenFormActions from './token/TokenFormActions';
 
 interface TokenFormProps {
   onSubmit: (wallets: string[], amount: string) => Promise<void>;
@@ -128,94 +127,28 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="wallets" className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Wallet List (comma-separated)
-              </Label>
-              <Textarea
-                id="wallets"
-                placeholder="0x1234...,0x5678..."
-                value={walletList}
-                onChange={(e) => setWalletList(e.target.value)}
-                className="min-h-[100px] bg-background border-input focus-visible:ring-purple-500"
-                disabled={disabled || loading}
-              />
-              <p className="text-xs text-muted-foreground">Add wallet addresses separated by commas</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="flex items-center gap-2">
-                <Coins className="h-4 w-4 text-muted-foreground" />
-                Token Amount (per wallet)
-              </Label>
-              <Input
-                id="amount"
-                placeholder="100"
-                type="number"
-                min="0"
-                step="0.000001"
-                value={tokenAmount}
-                onChange={(e) => setTokenAmount(e.target.value)}
-                disabled={disabled || loading}
-                className="bg-background border-input focus-visible:ring-purple-500"
-              />
-              <p className="text-xs text-muted-foreground">Specify how many tokens each wallet will receive</p>
-            </div>
+            <TokenFormFields
+              walletList={walletList}
+              setWalletList={setWalletList}
+              tokenAmount={tokenAmount}
+              setTokenAmount={setTokenAmount}
+              disabled={disabled || loading}
+            />
             
-            {transferring && (
-              <div className="space-y-2 bg-blue-900/30 p-3 rounded-lg border border-blue-500/30">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-blue-400">Transfer Progress:</span>
-                  <span className="text-sm font-medium text-blue-400">{processedCount}/{totalWallets}</span>
-                </div>
-                <div className="w-full bg-blue-950/50 rounded-full h-2.5">
-                  <div className="bg-blue-500 h-2.5 rounded-full" 
-                       style={{ width: `${totalWallets ? (processedCount / totalWallets) * 100 : 0}%` }}></div>
-                </div>
-                {currentWallet && (
-                  <p className="text-xs text-blue-400/70 truncate">Current: {currentWallet}</p>
-                )}
-              </div>
-            )}
+            <TokenProgressIndicator
+              transferring={transferring}
+              currentWallet={currentWallet}
+              processedCount={processedCount}
+              totalWallets={totalWallets}
+            />
           </CardContent>
           <CardFooter>
-            <motion.div 
-              whileHover={!disabled ? { scale: 1.02 } : {}}
-              whileTap={!disabled ? { scale: 0.98 } : {}}
-              className="w-full"
-            >
-              <Button 
-                type="submit" 
-                className="w-full gradient-bg hover:opacity-90 transition-opacity"
-                disabled={disabled || loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader className="h-5 w-5 animate-spin mr-2" />
-                    {transferring ? 'Transferring...' : 'Processing...'}
-                  </>
-                ) : success ? (
-                  <>
-                    <Check className="h-5 w-5 mr-2" />
-                    Tokens Transferred!
-                  </>
-                ) : (
-                  <>
-                    {disabled ? (
-                      <motion.div 
-                        animate={{ x: [0, 2, 0, -2, 0] }}
-                        transition={{ duration: 0.5, repeat: Infinity }}
-                      >
-                        <Lock className="h-5 w-5 mr-2" />
-                      </motion.div>
-                    ) : (
-                      <Send className="h-5 w-5 mr-2" />
-                    )}
-                    Transfer Tokens
-                  </>
-                )}
-              </Button>
-            </motion.div>
+            <TokenFormActions
+              loading={loading}
+              success={success}
+              disabled={disabled}
+              transferring={transferring}
+            />
           </CardFooter>
         </form>
       </Card>
