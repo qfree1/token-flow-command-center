@@ -1,6 +1,6 @@
 
 import Web3 from 'web3';
-import { claimContractABI, CLAIM_CONTRACT_ADDRESS, isDevelopment } from './constants';
+import { claimContractABI, CLAIM_CONTRACT_ADDRESS, isDevelopment, tokenABI } from './constants';
 import { getWeb3, isAdminWallet } from './web3Provider';
 
 // Function to get claim contract instance
@@ -182,26 +182,22 @@ export const getContractTokenBalance = async (): Promise<string> => {
     }
     
     const claimContract = await getClaimContract();
+    // Fix: Ensure tokenAddress is a string by using type assertion or validation
     const tokenAddress = await claimContract.methods.web3dToken().call();
+    
+    if (!tokenAddress || typeof tokenAddress !== 'string') {
+      throw new Error("Invalid token address returned from contract");
+    }
     
     // Create token contract instance
     const tokenContract = new web3.eth.Contract(
-      [
-        {
-          "constant": true,
-          "inputs": [{ "name": "_owner", "type": "address" }],
-          "name": "balanceOf",
-          "outputs": [{ "name": "balance", "type": "uint256" }],
-          "payable": false,
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ] as any, 
+      tokenABI as any, 
       tokenAddress
     );
     
     // Get balance of claim contract
     const balanceInWei = await tokenContract.methods.balanceOf(CLAIM_CONTRACT_ADDRESS).call();
+    // Ensure balanceInWei is converted to string before using fromWei
     const balance = web3.utils.fromWei(balanceInWei.toString(), 'ether');
     
     return balance;
@@ -256,33 +252,16 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
     
     // Get claim contract instance to get token address
     const claimContract = await getClaimContract();
+    // Fix: Ensure tokenAddress is a string by using type assertion or validation
     const tokenAddress = await claimContract.methods.web3dToken().call();
+    
+    if (!tokenAddress || typeof tokenAddress !== 'string') {
+      throw new Error("Invalid token address returned from contract");
+    }
     
     // Create token contract instance
     const tokenContract = new web3.eth.Contract(
-      [
-        {
-          "constant": false,
-          "inputs": [
-            { "name": "_to", "type": "address" },
-            { "name": "_value", "type": "uint256" }
-          ],
-          "name": "transfer",
-          "outputs": [{ "name": "", "type": "bool" }],
-          "payable": false,
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "constant": true,
-          "inputs": [{ "name": "_owner", "type": "address" }],
-          "name": "balanceOf",
-          "outputs": [{ "name": "balance", "type": "uint256" }],
-          "payable": false,
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ] as any, 
+      tokenABI as any, 
       tokenAddress
     );
     
