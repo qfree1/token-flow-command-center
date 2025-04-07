@@ -48,7 +48,9 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       // Apply gas boost (20%)
       const boostedGasPriceGwei = Math.ceil(gasPriceGwei * 1.2);
       // Convert to string to fix the bigint type error
-      const boostedGasPriceWei = web3.utils.toWei(String(boostedGasPriceGwei), 'gwei').toString();
+      const boostedGasPriceWei = web3.utils.toWei(String(boostedGasPriceGwei), 'gwei');
+      // Convert the bigint to string to fix the error
+      const boostedGasPriceWeiStr = boostedGasPriceWei.toString();
       console.log("Boosted gas price (Gwei):", boostedGasPriceGwei);
 
       // Use a higher fixed gas limit to avoid estimation issues
@@ -58,7 +60,7 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       console.log("Sending setClaimList transaction with params:", {
         from: adminAddress,
         gas: gasLimit,
-        gasPrice: boostedGasPriceWei,
+        gasPrice: boostedGasPriceWeiStr,
         nonce: nonce
       });
       
@@ -66,7 +68,7 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
         from: adminAddress,
         gas: gasLimit,
-        gasPrice: boostedGasPriceWei,
+        gasPrice: boostedGasPriceWeiStr,
         nonce: nonce
       });
       
