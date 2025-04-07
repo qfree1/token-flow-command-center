@@ -55,16 +55,16 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       
       console.log("Sending setClaimList transaction with params:", {
         from: adminAddress,
-        gas: gasLimit,
-        gasPrice: boostedGasPriceWei,
+        gas: String(gasLimit),
+        gasPrice: String(boostedGasPriceWei),
         nonce: nonce
       });
       
       // Execute the transaction
       const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
         from: adminAddress,
-        gas: gasLimit,
-        gasPrice: boostedGasPriceWei,
+        gas: String(gasLimit),
+        gasPrice: String(boostedGasPriceWei),
         nonce: nonce
       });
       

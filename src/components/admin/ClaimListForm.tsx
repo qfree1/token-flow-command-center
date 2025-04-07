@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,6 +9,8 @@ import { motion } from 'framer-motion';
 import { ClipboardList, Loader, CheckCircle, AlertCircle, Bug } from 'lucide-react';
 import TokenProgressIndicator from '../token/TokenProgressIndicator';
 import { setClaimList } from '@/services/web3';
+import { CLAIM_CONTRACT_ADDRESS } from '@/services/web3/constants';
+import Web3 from 'web3';
 
 interface ClaimListFormProps {
   disabled: boolean;
@@ -195,7 +196,7 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
                 <p className="font-medium text-slate-400 mb-1">Debug Info:</p>
                 <p>Contract Address: {CLAIM_CONTRACT_ADDRESS}</p>
                 <p>Network: BSC Mainnet</p>
-                <p>Token Amount: {tokenAmount ? web3.utils.toWei(tokenAmount, 'ether') : '0'} wei</p>
+                <p>Token Amount: {tokenAmount ? new Web3().utils.toWei(tokenAmount, 'ether') : '0'} wei</p>
               </div>
             )}
 
