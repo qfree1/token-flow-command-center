@@ -13,8 +13,8 @@ export const API_BASE_URL = process.env.NODE_ENV === 'production'
 // Environment check for dev/prod modes
 export const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// Web3DClaim contract address - use the actual deployed address
-export const CLAIM_CONTRACT_ADDRESS = '0x5B38Da6a701c568545dCfcB03FcB875f56beddC4'; // Replace with your actual contract address
+// Web3DClaim contract address - update with an actual deployed contract address
+export const CLAIM_CONTRACT_ADDRESS = '0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7';  // Using token address as claim contract for direct transfers
 
 // Chain ID for BSC mainnet
 export const BSC_CHAIN_ID = 56;

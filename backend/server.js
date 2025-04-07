@@ -50,7 +50,7 @@ const tokenABI = [
 ];
 
 // Constants
-const TOKEN_CONTRACT_ADDRESS = '0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7';
+const TOKEN_CONTRACT_ADDRESS = '0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7'; // Real Web3D Token address
 const ADMIN_ADDRESS = '0x4A58ad9EdaC24762D3eA8eB76ab1E2C114cBB4d4';
 const BSC_RPC_URL = process.env.BSC_RPC_URL || 'https://bsc-dataseed.binance.org/';
 
@@ -148,7 +148,7 @@ app.get('/api/allocations/check', async (req, res) => {
   }
 });
 
-// Claim tokens
+// Claim tokens - Directly transfer Web3D tokens to user
 app.post('/api/tokens/claim', async (req, res) => {
   try {
     const { address } = req.body;
@@ -169,9 +169,10 @@ app.post('/api/tokens/claim', async (req, res) => {
     const adminAccount = web3.eth.accounts.privateKeyToAccount(ADMIN_PRIVATE_KEY);
     web3.eth.accounts.wallet.add(adminAccount);
     
-    // Get gas price
+    // Get gas price and gas limit for BSC
     const gasPrice = await web3.eth.getGasPrice();
-    const gasLimit = 200000; // Estimated gas limit for ERC20 transfers
+    const gasPriceHex = '0x' + BigInt(gasPrice).toString(16);
+    const gasLimit = '0x' + (200000).toString(16); // Estimated gas limit for ERC20 transfers
     
     // Convert tokens to wei (assuming 18 decimals)
     const amountInWei = web3.utils.toWei(allocation, 'ether');
@@ -179,14 +180,18 @@ app.post('/api/tokens/claim', async (req, res) => {
     // Create transaction
     const txData = tokenContract.methods.transfer(walletAddress, amountInWei).encodeABI();
     
+    console.log(`Sending ${allocation} Web3D tokens from ${adminAccount.address} to ${walletAddress}`);
+    
     // Send transaction
     const txResponse = await web3.eth.sendTransaction({
       from: adminAccount.address,
       to: TOKEN_CONTRACT_ADDRESS,
       gas: gasLimit,
-      gasPrice: gasPrice,
+      gasPrice: gasPriceHex,
       data: txData
     });
+    
+    console.log(`Transaction successful: ${txResponse.transactionHash}`);
     
     // Remove allocation after successful transfer
     tokenAllocations.delete(walletAddress);

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Coins, Check, Loader, AlertTriangle } from 'lucide-react';
-import { checkClaimableAmount, claimTokens, getClaimStatus } from '@/services/web3';
+import { checkTokenAllocation, claimTokens, getTokenBalance } from '@/services/web3';
 
 interface ClaimCardProps {
   walletAddress: string | null;
@@ -16,6 +16,7 @@ const ClaimCard: React.FC<ClaimCardProps> = ({ walletAddress }) => {
   const [loading, setLoading] = useState(false);
   const [claimed, setClaimed] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState<string>("0");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -24,27 +25,38 @@ const ClaimCard: React.FC<ClaimCardProps> = ({ walletAddress }) => {
       
       setCheckingStatus(true);
       try {
-        // Check if already claimed
-        const claimStatus = await getClaimStatus(walletAddress);
-        setClaimed(claimStatus);
+        // Check available amount
+        const amount = await checkTokenAllocation(walletAddress);
+        setClaimableAmount(amount);
         
-        if (!claimStatus) {
-          // Check available amount
-          const amount = await checkClaimableAmount(walletAddress);
-          setClaimableAmount(amount);
-          
-          if (amount === "0") {
+        // Check current token balance 
+        const balance = await getTokenBalance(walletAddress);
+        setCurrentBalance(balance);
+        
+        // If balance exists, they might have claimed already
+        if (Number(balance) > 0) {
+          setClaimed(true);
+        }
+        
+        if (!amount || amount === "0") {
+          // If no allocation but has balance, they likely claimed
+          if (Number(balance) > 0) {
+            toast({
+              title: "Tokens Already Claimed",
+              description: `You have ${balance} Web3D tokens in your wallet`,
+            });
+          } else {
             toast({
               title: "No Allocation Found",
               description: "Your wallet does not have any tokens allocated for claiming",
               variant: "destructive"
             });
-          } else {
-            toast({
-              title: "Allocation Found",
-              description: `You have ${amount} Web3D tokens available to claim`,
-            });
           }
+        } else {
+          toast({
+            title: "Allocation Found",
+            description: `You have ${amount} Web3D tokens available to claim`,
+          });
         }
       } catch (error) {
         console.error("Error checking claim:", error);
@@ -73,9 +85,14 @@ const ClaimCard: React.FC<ClaimCardProps> = ({ walletAddress }) => {
       if (success) {
         setClaimed(true);
         setClaimableAmount("0");
+        
+        // Update balance after successful claim
+        const newBalance = await getTokenBalance(walletAddress);
+        setCurrentBalance(newBalance);
+        
         toast({
           title: "Success",
-          description: `Successfully claimed your tokens!`,
+          description: `Successfully claimed ${claimableAmount} Web3D tokens!`,
         });
       }
     } catch (error: any) {
@@ -108,11 +125,17 @@ const ClaimCard: React.FC<ClaimCardProps> = ({ walletAddress }) => {
             >
               <Coins className="h-6 w-6" />
             </motion.div>
-            Claim Status
+            Web3D Token Claim
           </CardTitle>
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {/* Current Balance Display */}
+          <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4 text-center">
+            <p className="text-blue-400 text-sm">Current Balance</p>
+            <p className="text-xl font-bold mt-1">{currentBalance} Web3D</p>
+          </div>
+        
           {checkingStatus ? (
             <div className="bg-amber-900/30 border border-amber-500/30 rounded-lg p-4 text-center">
               <div className="flex justify-center mb-2">

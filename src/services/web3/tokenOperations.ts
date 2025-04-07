@@ -103,61 +103,91 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
   const walletAddress = userAddress.toLowerCase();
   console.log(`Attempting to claim tokens for: ${walletAddress}`);
   
-  if (isDevelopment) {
-    // Development mode: simulate claiming from localStorage
-    try {
-      // Always reload from localStorage to ensure we have the latest data
-      tokenAllocations = loadTokenAllocations();
-      
-      console.log("Before claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
-      const allocation = tokenAllocations.get(walletAddress);
-      
-      console.log(`Token allocation for ${walletAddress}: ${allocation || 'None'}`);
-      
-      if (!allocation) {
-        console.error(`No allocation found for wallet: ${walletAddress}`);
-        throw new Error("No token allocation found for this wallet");
-      }
-      
-      // Simulate a delay for the transaction
-      console.log("Processing token claim transaction...");
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Remove the allocation after claiming
-      tokenAllocations.delete(walletAddress);
-      // Save updated allocations to localStorage
-      saveTokenAllocations(tokenAllocations);
-      
-      // Verify the allocation was actually removed
-      const verifyAllocation = loadTokenAllocations().get(walletAddress);
-      if (verifyAllocation) {
-        console.error("Failed to remove allocation from localStorage!");
-      } else {
-        console.log("Allocation successfully removed from localStorage");
-      }
-      
-      console.log(`Successfully claimed tokens for ${walletAddress}. Allocation removed.`);
-      console.log("After claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
-      
-      return true;
-    } catch (error) {
-      console.error("Error claiming tokens:", error);
-      throw error;
+  try {
+    // Always reload from localStorage to ensure we have the latest data
+    tokenAllocations = loadTokenAllocations();
+    
+    console.log("Before claim - All allocations:", Object.fromEntries(tokenAllocations.entries()));
+    const allocation = tokenAllocations.get(walletAddress);
+    
+    console.log(`Token allocation for ${walletAddress}: ${allocation || 'None'}`);
+    
+    if (!allocation) {
+      console.error(`No allocation found for wallet: ${walletAddress}`);
+      throw new Error("No token allocation found for this wallet");
     }
-  } else {
-    // Production mode: use backend API
-    try {
-      await api.claimTokens(walletAddress);
-      console.log(`Successfully claimed tokens for ${walletAddress} via API`);
-      return true;
-    } catch (error) {
-      console.error("API Error:", error);
-      throw error;
+    
+    if (!isDevelopment) {
+      // For production, use API
+      try {
+        await api.claimTokens(walletAddress);
+        console.log(`Successfully claimed tokens for ${walletAddress} via API`);
+        return true;
+      } catch (error) {
+        console.error("API Error:", error);
+        throw error;
+      }
+    } else {
+      // In development mode, try to actually send tokens from admin wallet
+      try {
+        const web3 = await getWeb3();
+        const accounts = await web3.eth.getAccounts();
+        const adminAddress = accounts[0];
+        
+        if (!isAdminWallet(adminAddress)) {
+          throw new Error("Only the admin wallet can distribute tokens");
+        }
+        
+        // Create contract instance
+        const tokenContract = new web3.eth.Contract(tokenABI as any, TOKEN_CONTRACT_ADDRESS);
+        
+        // Convert token amount to wei (assuming 18 decimals)
+        const amountInWei = web3.utils.toWei(allocation, 'ether');
+        
+        console.log(`Transferring ${allocation} tokens to ${walletAddress} from ${adminAddress}`);
+        
+        try {
+          // Get gas estimate
+          const gasEstimate = await tokenContract.methods.transfer(walletAddress, amountInWei).estimateGas({ from: adminAddress });
+          
+          // Convert gas estimate to proper hexadecimal format
+          const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
+          
+          // Get gas price and convert to proper hex format
+          const gasPriceWei = await web3.eth.getGasPrice();
+          const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
+          
+          // Send transaction
+          const txResult = await tokenContract.methods.transfer(walletAddress, amountInWei).send({
+            from: adminAddress,
+            gas: gasLimit,
+            gasPrice: gasPrice
+          });
+          
+          console.log(`Transfer successful: ${txResult.transactionHash}`);
+          
+          // Remove the allocation after claiming
+          tokenAllocations.delete(walletAddress);
+          // Save updated allocations to localStorage
+          saveTokenAllocations(tokenAllocations);
+          
+          return true;
+        } catch (error) {
+          console.error(`Error transferring tokens to ${walletAddress}:`, error);
+          throw error;
+        }
+      } catch (error) {
+        console.error("Error in direct token transfer:", error);
+        throw error;
+      }
     }
+  } catch (error) {
+    console.error("Error claiming tokens:", error);
+    throw error;
   }
 };
 
-// Distribute tokens function (for admin use) - now with actual token transfer
+// Distribute tokens function (admin use) - direct token transfers
 export const distributeTokens = async (wallets: string[], amount: string): Promise<void> => {
   try {
     if (!wallets || !amount || wallets.length === 0 || isNaN(Number(amount))) {
@@ -190,9 +220,20 @@ export const distributeTokens = async (wallets: string[], amount: string): Promi
     // Set allocations
     await setTokenAllocations(validWallets, amount);
     
+    // Custom event for tracking progress
+    const progressEvent = (wallet: string, count: number, total: number) => {
+      const event = new CustomEvent('tokenTransferProgress', {
+        detail: { wallet, count, total }
+      });
+      window.dispatchEvent(event);
+    };
+    
     // Perform actual transfers
-    for (const wallet of validWallets) {
+    for (let i = 0; i < validWallets.length; i++) {
+      const wallet = validWallets[i];
       console.log(`Transferring ${amount} tokens to ${wallet}`);
+      
+      progressEvent(wallet, i + 1, validWallets.length);
       
       try {
         // Get gas estimate
