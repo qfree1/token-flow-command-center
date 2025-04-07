@@ -9,6 +9,6 @@ export {
   distributeTokens,
   getTokenBalance
 } from './tokenOperations';
-// Export everything from claimOperations
-export * from './claimOperations';
+// Export everything from claim module
+export * from './claim';
 export * from './api';
