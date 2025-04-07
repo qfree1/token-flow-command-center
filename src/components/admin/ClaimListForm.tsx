@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { ClipboardList, Loader, CheckCircle, AlertCircle } from 'lucide-react';
+import { ClipboardList, Loader, CheckCircle, AlertCircle, Bug } from 'lucide-react';
 import TokenProgressIndicator from '../token/TokenProgressIndicator';
 import { setClaimList } from '@/services/web3';
 
@@ -24,10 +24,16 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
   const [currentWallet, setCurrentWallet] = useState<string | null>(null);
   const [processedCount, setProcessedCount] = useState(0);
   const [totalWallets, setTotalWallets] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [debug, setDebug] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Reset states
+    setSuccess(false);
+    setErrorMessage(null);
     
     if (!walletList.trim() || !tokenAmount.trim()) {
       toast({
@@ -72,28 +78,18 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
       // Create an array with the same amount for all wallets
       const amounts = wallets.map(() => tokenAmount);
       
-      // Simulate progress updates
-      const updateProgress = (index: number, wallet: string) => {
-        setCurrentWallet(wallet);
-        setProcessedCount(index + 1);
-      };
-      
       console.log("Setting claim list for wallets:", wallets);
       console.log("With token amount:", tokenAmount);
       
-      // Process in batches to show progress
-      for (let i = 0; i < wallets.length; i++) {
-        // Update progress indicator every wallet
-        updateProgress(i, wallets[i]);
-        
-        // Add a small delay for UX (this is just for visualization)
-        if (i < wallets.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
+      // Show progress as we prepare transaction
+      setCurrentWallet('Preparing transaction...');
       
       // Call the contract method to set claim list
       await setClaimList(wallets, amounts);
+      
+      // Update progress to show completion
+      setProcessedCount(wallets.length);
+      setCurrentWallet('Transaction completed!');
       
       // Show success message
       setSuccess(true);
@@ -110,6 +106,10 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
       });
     } catch (error: any) {
       console.error("Claim list setting error:", error);
+      
+      // Set error message for display
+      setErrorMessage(error.message || "Failed to set claim list");
+      
       toast({
         title: "Error",
         description: error.message || "Failed to set claim list. Please try again.",
@@ -120,6 +120,10 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
       setTransferring(false);
       setCurrentWallet(null);
     }
+  };
+
+  const toggleDebug = () => {
+    setDebug(!debug);
   };
 
   return (
@@ -178,6 +182,35 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
               processedCount={processedCount}
               totalWallets={totalWallets}
             />
+            
+            {errorMessage && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-md p-3 text-sm">
+                <p className="font-medium text-red-500 mb-1">Error:</p>
+                <p className="text-red-400">{errorMessage}</p>
+              </div>
+            )}
+            
+            {debug && (
+              <div className="bg-slate-800/50 border border-slate-700 rounded-md p-3 text-xs font-mono">
+                <p className="font-medium text-slate-400 mb-1">Debug Info:</p>
+                <p>Contract Address: {CLAIM_CONTRACT_ADDRESS}</p>
+                <p>Network: BSC Mainnet</p>
+                <p>Token Amount: {tokenAmount ? web3.utils.toWei(tokenAmount, 'ether') : '0'} wei</p>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={toggleDebug} 
+                className="text-xs"
+              >
+                <Bug className="h-3 w-3 mr-1" />
+                {debug ? 'Hide Debug' : 'Debug'}
+              </Button>
+            </div>
           </CardContent>
           <CardFooter>
             <motion.div 

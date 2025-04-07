@@ -1,4 +1,3 @@
-
 import Web3 from 'web3';
 import { claimContractABI, CLAIM_CONTRACT_ADDRESS, tokenABI } from '../constants';
 import { getWeb3, isAdminWallet } from '../web3Provider';
@@ -33,40 +32,63 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
     
     // Get contract
     const claimContract = await getClaimContract(true);
-    console.log("Claim contract created successfully");
+    console.log("Claim contract created successfully:", CLAIM_CONTRACT_ADDRESS);
     
     try {
-      console.log("Estimating gas for setClaimList...");
-      const gasEstimate = await claimContract.methods.setClaimList(wallets, amountsInWei).estimateGas({
-        from: adminAddress
-      });
+      console.log("Getting transaction count for nonce...");
+      const nonce = await web3.eth.getTransactionCount(adminAddress, 'latest');
+      console.log("Current nonce:", nonce);
       
-      console.log("Gas estimation successful:", gasEstimate);
-      
-      // Convert gas estimate to proper hexadecimal format with no decimal points
-      const gasLimit = String(Math.ceil(Number(gasEstimate) * 1.5));
-      
-      // Get gas price 
+      // Get gas price with boost
       const gasPriceWei = await web3.eth.getGasPrice();
-      const gasPriceWeiStr = String(gasPriceWei || '0');
+      const gasPriceGwei = Number(web3.utils.fromWei(String(gasPriceWei), 'gwei'));
+      console.log("Current gas price (Gwei):", gasPriceGwei);
       
-      console.log("Sending setClaimList transaction with gas:", {
-        limit: gasLimit,
-        price: gasPriceWeiStr
+      // Apply gas boost (20%)
+      const boostedGasPriceGwei = Math.ceil(gasPriceGwei * 1.2);
+      const boostedGasPriceWei = web3.utils.toWei(String(boostedGasPriceGwei), 'gwei');
+      console.log("Boosted gas price (Gwei):", boostedGasPriceGwei);
+
+      // Use a higher fixed gas limit to avoid estimation issues
+      const gasLimit = 5000000; // This is a high value that should work for most cases
+      console.log("Using fixed gas limit:", gasLimit);
+      
+      console.log("Sending setClaimList transaction with params:", {
+        from: adminAddress,
+        gas: gasLimit,
+        gasPrice: boostedGasPriceWei,
+        nonce: nonce
       });
       
       // Execute the transaction
       const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
         from: adminAddress,
         gas: gasLimit,
-        gasPrice: gasPriceWeiStr
+        gasPrice: boostedGasPriceWei,
+        nonce: nonce
       });
       
       console.log(`Claim list set successfully. Transaction: ${tx.transactionHash}`);
       return true;
     } catch (error) {
       console.error("Error in setClaimList transaction:", error);
-      throw new Error(`Failed to set claim list: ${error.message || "Unknown error"}`);
+      
+      // Enhanced error logging
+      if (error instanceof Error) {
+        const errorMsg = error.message;
+        console.error("Error message:", errorMsg);
+        
+        // Check for common errors
+        if (errorMsg.includes("insufficient funds")) {
+          throw new Error("Insufficient funds for gas. Please add more BNB to your wallet.");
+        } else if (errorMsg.includes("nonce too low") || errorMsg.includes("replacement transaction underpriced")) {
+          throw new Error("Transaction with same nonce already pending. Please wait for it to complete or speed it up in MetaMask.");
+        } else if (errorMsg.includes("gas required exceeds allowance")) {
+          throw new Error("Gas limit too low. Try again with higher gas limit.");
+        }
+      }
+      
+      throw new Error(`Failed to set claim list: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   } catch (error) {
     console.error("Error setting claim list:", error);
