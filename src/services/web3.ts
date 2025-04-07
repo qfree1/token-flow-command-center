@@ -208,8 +208,8 @@ export const setTokenAllocations = async (wallets: string[], amount: string): Pr
   }
 
   if (isDevelopment) {
-    // Development mode: use localStorage
-    console.log("Development mode: Setting allocations in localStorage");
+    // Development mode: use localStorage but also perform actual transfer
+    console.log("Development mode: Setting allocations in localStorage and performing transfer");
     
     // First, ensure we have the latest allocations
     tokenAllocations = loadTokenAllocations();
@@ -342,12 +342,61 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
   }
 };
 
-// Distribute tokens function (for admin use)
+// Distribute tokens function (for admin use) - now with actual token transfer
 export const distributeTokens = async (wallets: string[], amount: string): Promise<void> => {
   try {
-    // This is just a wrapper around setTokenAllocations for now
-    await setTokenAllocations(wallets, amount);
-    console.log(`Tokens successfully allocated for distribution to ${wallets.length} wallets`);
+    if (!wallets || !amount || wallets.length === 0 || isNaN(Number(amount))) {
+      throw new Error("Invalid wallets or amount");
+    }
+    
+    // Filter valid wallet addresses
+    const validWallets = wallets.filter(wallet => wallet && wallet.startsWith('0x') && wallet.length === 42);
+    if (validWallets.length === 0) {
+      throw new Error("No valid wallet addresses provided");
+    }
+    
+    // Get web3 instance from connected wallet
+    const web3 = await getWeb3();
+    const accounts = await web3.eth.getAccounts();
+    const adminAddress = accounts[0];
+    
+    if (!isAdminWallet(adminAddress)) {
+      throw new Error("Only the admin wallet can distribute tokens");
+    }
+    
+    // Create contract instance
+    const tokenContract = new web3.eth.Contract(tokenABI as any, TOKEN_CONTRACT_ADDRESS);
+    
+    // Convert token amount to wei (assuming 18 decimals)
+    const amountInWei = web3.utils.toWei(amount, 'ether');
+    
+    console.log(`Starting transfer of ${amount} tokens to ${validWallets.length} wallets`);
+    
+    // Set allocations
+    await setTokenAllocations(validWallets, amount);
+    
+    // Perform actual transfers
+    for (const wallet of validWallets) {
+      console.log(`Transferring ${amount} tokens to ${wallet}`);
+      
+      try {
+        // Get gas estimate
+        const gasEstimate = await tokenContract.methods.transfer(wallet, amountInWei).estimateGas({ from: adminAddress });
+        
+        // Send transaction
+        const txResult = await tokenContract.methods.transfer(wallet, amountInWei).send({
+          from: adminAddress,
+          gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer for gas
+        });
+        
+        console.log(`Transfer successful: ${txResult.transactionHash}`);
+      } catch (error) {
+        console.error(`Error transferring tokens to ${wallet}:`, error);
+        throw error;
+      }
+    }
+    
+    console.log(`Tokens successfully transferred to ${validWallets.length} wallets`);
   } catch (error) {
     console.error("Error in distributeTokens:", error);
     throw error;  // Re-throw to propagate the error to the UI

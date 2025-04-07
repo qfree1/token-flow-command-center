@@ -19,6 +19,10 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
   const [tokenAmount, setTokenAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [transferring, setTransferring] = useState(false);
+  const [currentWallet, setCurrentWallet] = useState<string | null>(null);
+  const [processedCount, setProcessedCount] = useState(0);
+  const [totalWallets, setTotalWallets] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +62,19 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
 
     setLoading(true);
     setSuccess(false);
+    setTransferring(true);
+    setTotalWallets(wallets.length);
+    setProcessedCount(0);
+    
     try {
+      // Set up event listeners for transfer progress
+      window.addEventListener('tokenTransferProgress', ((event: CustomEvent) => {
+        const { wallet, count, total } = event.detail;
+        setCurrentWallet(wallet);
+        setProcessedCount(count);
+        console.log(`Transfer progress: ${count}/${total} - Current: ${wallet}`);
+      }) as EventListener);
+      
       await onSubmit(wallets, tokenAmount);
       
       // Show success message
@@ -71,21 +87,24 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
       
       toast({
         title: "Success",
-        description: `Tokens allocated for ${wallets.length} wallets to claim`,
+        description: `Tokens transferred to ${wallets.length} wallets`,
         variant: "default"
       });
       
-      // Log to confirm allocation was saved
-      console.log(`Allocated ${tokenAmount} tokens for ${wallets.length} wallets`);
+      // Log to confirm transfer was completed
+      console.log(`Transferred ${tokenAmount} tokens to ${wallets.length} wallets`);
     } catch (error) {
-      console.error("Token allocation error:", error);
+      console.error("Token transfer error:", error);
       toast({
         title: "Error",
-        description: "Failed to allocate tokens. Please try again.",
+        description: "Failed to transfer tokens. Please try again.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
+      setTransferring(false);
+      setCurrentWallet(null);
+      window.removeEventListener('tokenTransferProgress', (() => {}) as EventListener);
     }
   };
 
@@ -105,7 +124,7 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
               >
                 <Send className="h-6 w-6" />
               </motion.div>
-              Allocate Tokens
+              Transfer Tokens
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -142,6 +161,22 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
               />
               <p className="text-xs text-muted-foreground">Specify how many tokens each wallet will receive</p>
             </div>
+            
+            {transferring && (
+              <div className="space-y-2 bg-blue-900/30 p-3 rounded-lg border border-blue-500/30">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-blue-400">Transfer Progress:</span>
+                  <span className="text-sm font-medium text-blue-400">{processedCount}/{totalWallets}</span>
+                </div>
+                <div className="w-full bg-blue-950/50 rounded-full h-2.5">
+                  <div className="bg-blue-500 h-2.5 rounded-full" 
+                       style={{ width: `${totalWallets ? (processedCount / totalWallets) * 100 : 0}%` }}></div>
+                </div>
+                {currentWallet && (
+                  <p className="text-xs text-blue-400/70 truncate">Current: {currentWallet}</p>
+                )}
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <motion.div 
@@ -157,12 +192,12 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
                 {loading ? (
                   <>
                     <Loader className="h-5 w-5 animate-spin mr-2" />
-                    Processing...
+                    {transferring ? 'Transferring...' : 'Processing...'}
                   </>
                 ) : success ? (
                   <>
                     <Check className="h-5 w-5 mr-2" />
-                    Tokens Allocated!
+                    Tokens Transferred!
                   </>
                 ) : (
                   <>
@@ -174,9 +209,9 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
                         <Lock className="h-5 w-5 mr-2" />
                       </motion.div>
                     ) : (
-                      <Check className="h-5 w-5 mr-2" />
+                      <Send className="h-5 w-5 mr-2" />
                     )}
-                    Allocate Tokens for Claiming
+                    Transfer Tokens
                   </>
                 )}
               </Button>
