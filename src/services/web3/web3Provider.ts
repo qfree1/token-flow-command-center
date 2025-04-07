@@ -29,6 +29,8 @@ export const getWeb3 = async (): Promise<Web3> => {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       const targetChainId = `0x${CURRENT_CHAIN_ID.toString(16)}`;
       
+      console.log(`Current chainId: ${chainId}, Target chainId: ${targetChainId}`);
+      
       if (chainId !== targetChainId) {
         try {
           console.log(`Switching to BSC chain ID: ${targetChainId}`);
@@ -37,7 +39,17 @@ export const getWeb3 = async (): Promise<Web3> => {
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: targetChainId }],
           });
+          
+          // Verify the chain was switched
+          const newChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          console.log(`New chainId after switching: ${newChainId}`);
+          
+          if (newChainId !== targetChainId) {
+            throw new Error(`Failed to switch to BSC. Current chain: ${newChainId}, Target: ${targetChainId}`);
+          }
+          
         } catch (switchError: any) {
+          console.error("Error switching chain:", switchError);
           // This error code indicates that the chain has not been added to MetaMask
           if (switchError.code === 4902) {
             console.log("Adding BSC network to wallet...");
@@ -61,13 +73,20 @@ export const getWeb3 = async (): Promise<Web3> => {
                 },
               ],
             });
+            
+            // Verify the chain was added and selected
+            const newChainId = await window.ethereum.request({ method: 'eth_chainId' });
+            console.log(`Chain ID after adding network: ${newChainId}`);
+            if (newChainId !== targetChainId) {
+              throw new Error("Failed to switch to BSC network after adding it to wallet");
+            }
           } else {
             throw switchError;
           }
         }
       }
       
-      const web3 = new Web3(window.ethereum);
+      const web3 = new Web3(window.ethereum as any);
       return web3;
     } catch (error) {
       console.error("Error initializing Web3 with wallet:", error);
@@ -96,6 +115,9 @@ export const connectWallet = async (): Promise<string> => {
     if (!accounts || accounts.length === 0) {
       throw new Error("No accounts found. Please check your wallet connection.");
     }
+    // Log the chainId after connecting to confirm correct network
+    const chainId = await web3.eth.getChainId();
+    console.log(`Connected to chainId: ${chainId} (${chainId.toString(16)})`);
     return accounts[0];
   } catch (error) {
     console.error("Wallet connection error:", error);

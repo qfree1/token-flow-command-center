@@ -1,4 +1,3 @@
-
 // Web3D token contract address on BSC
 export const TOKEN_CONTRACT_ADDRESS = '0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7';
 // Admin wallet address
@@ -21,8 +20,8 @@ export const API_BASE_URL = process.env.NODE_ENV === 'production'
 // Environment check for dev/prod modes
 export const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// Web3DClaim contract address - update with an actual deployed contract address
-export const CLAIM_CONTRACT_ADDRESS = '0x7eD9054C48088bb8Cfc5C5fbC32775b9455A13f7';  // Using token address as claim contract for direct transfers
+// Updated claim contract address with the one you provided
+export const CLAIM_CONTRACT_ADDRESS = '0xf658BAc41db26aA9765FdFFC0536A67f33eE9b5a';
 
 // Chain ID for BSC mainnet
 export const BSC_CHAIN_ID = 56;
@@ -116,7 +115,7 @@ export const tokenABI = [
   }
 ];
 
-// ABI for Web3DClaim contract
+// ABI for Web3DClaim contract - Updated to match the contract you shared
 export const claimContractABI = [
   {
     "inputs": [{"internalType": "address", "name": "_token", "type": "address"}],
