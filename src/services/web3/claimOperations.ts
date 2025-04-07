@@ -148,7 +148,8 @@ export const getClaimStatus = async (address: string): Promise<boolean> => {
     
     // Call the claimed mapping
     const hasClaimedStatus = await claimContract.methods.claimed(address).call();
-    return hasClaimedStatus;
+    // Ensure we're returning a boolean
+    return Boolean(hasClaimedStatus);
   } catch (error) {
     console.error("Error checking claim status:", error);
     return false;
