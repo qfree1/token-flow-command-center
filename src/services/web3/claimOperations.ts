@@ -182,7 +182,7 @@ export const getContractTokenBalance = async (): Promise<string> => {
     }
     
     const claimContract = await getClaimContract();
-    // Fix: Ensure tokenAddress is a string by using type assertion or validation
+    // Get the token address and validate it properly
     const tokenAddress = await claimContract.methods.web3dToken().call();
     
     if (!tokenAddress || typeof tokenAddress !== 'string') {
@@ -195,10 +195,12 @@ export const getContractTokenBalance = async (): Promise<string> => {
       tokenAddress
     );
     
-    // Get balance of claim contract
+    // Get balance of claim contract and ensure we're handling the type correctly
     const balanceInWei = await tokenContract.methods.balanceOf(CLAIM_CONTRACT_ADDRESS).call();
-    // Ensure balanceInWei is converted to string before using fromWei
-    const balance = web3.utils.fromWei(balanceInWei.toString(), 'ether');
+    
+    // Make sure balanceInWei is properly converted to string before using fromWei
+    const balanceStr = typeof balanceInWei === 'undefined' ? '0' : String(balanceInWei);
+    const balance = web3.utils.fromWei(balanceStr, 'ether');
     
     return balance;
   } catch (error) {
@@ -252,7 +254,7 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
     
     // Get claim contract instance to get token address
     const claimContract = await getClaimContract();
-    // Fix: Ensure tokenAddress is a string by using type assertion or validation
+    // Get the token address and validate it properly
     const tokenAddress = await claimContract.methods.web3dToken().call();
     
     if (!tokenAddress || typeof tokenAddress !== 'string') {
@@ -268,9 +270,12 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
     // Convert amount to wei
     const amountInWei = web3.utils.toWei(amount, 'ether');
     
-    // Check admin balance first
+    // Check admin balance first and ensure proper type handling
     const adminBalance = await tokenContract.methods.balanceOf(adminAddress).call();
-    if (BigInt(adminBalance) < BigInt(amountInWei)) {
+    // Convert adminBalance to string to safely compare with BigInt
+    const adminBalanceStr = String(adminBalance);
+    
+    if (BigInt(adminBalanceStr) < BigInt(amountInWei)) {
       throw new Error("Insufficient token balance");
     }
     
