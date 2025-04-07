@@ -1,4 +1,3 @@
-
 import Web3 from 'web3';
 import { claimContractABI, CLAIM_CONTRACT_ADDRESS, tokenABI } from '../constants';
 import { getWeb3, isAdminWallet } from '../web3Provider';
@@ -47,26 +46,26 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       
       // Apply gas boost (20%)
       const boostedGasPriceGwei = Math.ceil(gasPriceGwei * 1.2);
-      // Convert to string to fix the bigint type error
-      const boostedGasPriceWei = web3.utils.toWei(String(boostedGasPriceGwei), 'gwei');
+      // Convert to string to fix the bigint type error - Fixed by explicitly converting to string
+      const boostedGasPriceWei = String(web3.utils.toWei(String(boostedGasPriceGwei), 'gwei'));
       console.log("Boosted gas price (Gwei):", boostedGasPriceGwei);
 
       // Use a higher fixed gas limit to avoid estimation issues
-      const gasLimit = 5000000; // This is a high value that should work for most cases
+      const gasLimit = String(5000000); // Explicitly convert number to string
       console.log("Using fixed gas limit:", gasLimit);
       
       console.log("Sending setClaimList transaction with params:", {
         from: adminAddress,
-        gas: String(gasLimit),
-        gasPrice: String(boostedGasPriceWei),
+        gas: gasLimit,
+        gasPrice: boostedGasPriceWei,
         nonce: nonce
       });
       
       // Execute the transaction
       const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
         from: adminAddress,
-        gas: String(gasLimit),
-        gasPrice: String(boostedGasPriceWei),
+        gas: gasLimit,
+        gasPrice: boostedGasPriceWei,
         nonce: nonce
       });
       
