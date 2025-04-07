@@ -272,7 +272,7 @@ export const getTokenInfo = async (): Promise<{name: string, symbol: string}> =>
     }
     
     const web3 = new Web3(new Web3.providers.HttpProvider('https://bsc-dataseed.binance.org/'));
-    const tokenContract = new web3.eth.Contract(tokenABI as any, tokenAddress);
+    const tokenContract = new web3.eth.Contract(tokenABI as any, String(tokenAddress));
     
     try {
       // Get token name and symbol
@@ -280,7 +280,10 @@ export const getTokenInfo = async (): Promise<{name: string, symbol: string}> =>
       const symbol = await tokenContract.methods.symbol().call();
       
       console.log(`Token info - Name: ${name}, Symbol: ${symbol}`);
-      return { name, symbol };
+      return { 
+        name: typeof name === 'string' ? name : "Web3D Token", 
+        symbol: typeof symbol === 'string' ? symbol : "W3D" 
+      };
     } catch (error) {
       console.error("Error getting token info:", error);
       return { name: "Web3D Token", symbol: "W3D" };
@@ -308,24 +311,26 @@ export const debugClaimContract = async (address: string): Promise<any> => {
     
     console.log("Contract exists at the address");
     
-    // Create contract instance - FIX: Provide contract address as second parameter
+    // Create contract instance with explicit contract address parameter
     const claimContract = new web3.eth.Contract(claimContractABI as any, CLAIM_CONTRACT_ADDRESS);
     
-    // Get token address
-    const tokenAddress = await claimContract.methods.web3dToken().call();
-    console.log("Token address:", tokenAddress);
+    // Get token address with proper type handling
+    const tokenAddressResult = await claimContract.methods.web3dToken().call();
+    const tokenAddressStr = String(tokenAddressResult || '');
+    console.log("Token address:", tokenAddressStr);
     
     // Get claim data for the user
     const claimAmount = await claimContract.methods.claimableAmount(address).call();
     const hasClaimed = await claimContract.methods.claimed(address).call();
     
-    // Get admin address
-    const adminAddress = await claimContract.methods.admin().call();
+    // Get admin address with proper type handling
+    const adminAddressResult = await claimContract.methods.admin().call();
+    const adminAddressStr = String(adminAddressResult || '');
     
     return {
       contractAddress: CLAIM_CONTRACT_ADDRESS,
-      tokenAddress: String(tokenAddress),  // FIX: Ensure tokenAddress is converted to string
-      adminAddress: String(adminAddress),  // FIX: Ensure adminAddress is converted to string
+      tokenAddress: tokenAddressStr,
+      adminAddress: adminAddressStr,
       userAddress: address,
       claimAmount: web3.utils.fromWei(String(claimAmount || '0'), 'ether'),
       hasClaimed
