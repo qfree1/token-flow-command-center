@@ -13,6 +13,9 @@ export const API_BASE_URL = process.env.NODE_ENV === 'production'
 // Environment check for dev/prod modes
 export const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// Web3DClaim contract address - make sure to update this after deployment
+export const CLAIM_CONTRACT_ADDRESS = '0x123456789...'; // TODO: Update with actual deployed address
+
 // ABI for ERC20 token (simplified)
 export const tokenABI = [
   {
@@ -42,6 +45,85 @@ export const tokenABI = [
     "name": "balanceOf",
     "outputs": [{ "name": "balance", "type": "uint256" }],
     "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+// ABI for Web3DClaim contract
+export const claimContractABI = [
+  {
+    "inputs": [{"internalType": "address", "name": "_token", "type": "address"}],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "user", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "user", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "ClaimListUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "admin",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "name": "claimableAmount",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "name": "claimed",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMyClaimable",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address[]", "name": "users", "type": "address[]"},
+      {"internalType": "uint256[]", "name": "amounts", "type": "uint256[]"}
+    ],
+    "name": "setClaimList",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "web3dToken",
+    "outputs": [{"internalType": "contract IERC20", "name": "", "type": "address"}],
     "stateMutability": "view",
     "type": "function"
   }

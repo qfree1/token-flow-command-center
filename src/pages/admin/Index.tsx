@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { connectWallet, isAdminWallet, distributeTokens } from '../../services/web3';
+import { connectWallet, isAdminWallet } from '../../services/web3';
 import { useToast } from '@/hooks/use-toast';
 import WalletConnect from '../../components/WalletConnect';
 import TokenForm from '../../components/TokenForm';
@@ -8,6 +8,8 @@ import PasswordModal from '../../components/admin/PasswordModal';
 import AdminStatus from '../../components/admin/AdminStatus';
 import TokenActions from '../../components/admin/TokenActions';
 import AdminHeader from '../../components/admin/AdminHeader';
+import ClaimListForm from '../../components/admin/ClaimListForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -61,7 +63,12 @@ const Index = () => {
     }
 
     try {
-      await distributeTokens(wallets, amount);
+      // Note: This will now use the standard tokenOperations distributeTokens
+      // but you could modify it to use the claim contract if desired
+      await import('@/services/web3').then(({ distributeTokens }) => 
+        distributeTokens(wallets, amount)
+      );
+      
       toast({
         title: "Success",
         description: `Allocated ${amount} tokens to ${wallets.length} wallets for claiming`,
@@ -96,10 +103,25 @@ const Index = () => {
               isAdmin={isAdmin} 
             />
             
-            <TokenForm 
-              onSubmit={handleDistributeTokens}
-              disabled={!isAdmin || !walletAddress} 
-            />
+            <Tabs defaultValue="direct-transfer" className="w-full max-w-md mx-auto">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="direct-transfer">Direct Transfer</TabsTrigger>
+                <TabsTrigger value="claim-list">Set Claim List</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="direct-transfer" className="mt-4">
+                <TokenForm 
+                  onSubmit={handleDistributeTokens}
+                  disabled={!isAdmin || !walletAddress} 
+                />
+              </TabsContent>
+              
+              <TabsContent value="claim-list" className="mt-4">
+                <ClaimListForm
+                  disabled={!isAdmin || !walletAddress}
+                />
+              </TabsContent>
+            </Tabs>
             
             <TokenActions />
           </div>
