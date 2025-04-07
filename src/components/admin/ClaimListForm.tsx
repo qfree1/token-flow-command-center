@@ -127,6 +127,17 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
     setDebug(!debug);
   };
 
+  // Function to format wei value with explanation
+  const formatWeiAmount = (amount: string): string => {
+    try {
+      const web3Instance = new Web3();
+      const weiValue = web3Instance.utils.toWei(amount, 'ether');
+      return `${amount} Web3D (${weiValue} wei)`;
+    } catch (error) {
+      return `${amount} Web3D`;
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -173,7 +184,7 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
                 disabled={disabled || loading}
               />
               <p className="text-xs text-muted-foreground">
-                Amount of Web3D tokens each wallet can claim
+                Amount of Web3D tokens each wallet can claim (1 Web3D = 10<sup>18</sup> wei)
               </p>
             </div>
             
@@ -196,7 +207,7 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
                 <p className="font-medium text-slate-400 mb-1">Debug Info:</p>
                 <p>Contract Address: {CLAIM_CONTRACT_ADDRESS}</p>
                 <p>Network: BSC Mainnet</p>
-                <p>Token Amount: {tokenAmount ? new Web3().utils.toWei(tokenAmount, 'ether') : '0'} wei</p>
+                <p>Token Amount: {tokenAmount ? formatWeiAmount(tokenAmount) : '0 Web3D'}</p>
               </div>
             )}
 
