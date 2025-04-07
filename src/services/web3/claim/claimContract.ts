@@ -13,7 +13,9 @@ export const getClaimContract = async (requireSigner = false) => {
     
     console.log("Creating claim contract instance at:", CLAIM_CONTRACT_ADDRESS);
     
-    if (!CLAIM_CONTRACT_ADDRESS || CLAIM_CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
+    // Check if address is empty or zero address - using correct string comparisons
+    const emptyAddress = '0x0000000000000000000000000000000000000000';
+    if (!CLAIM_CONTRACT_ADDRESS || CLAIM_CONTRACT_ADDRESS === emptyAddress) {
       throw new Error("Invalid claim contract address");
     }
     
