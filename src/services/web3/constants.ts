@@ -13,8 +13,8 @@ export const API_BASE_URL = process.env.NODE_ENV === 'production'
 // Environment check for dev/prod modes
 export const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// Web3DClaim contract address - make sure to update this after deployment
-export const CLAIM_CONTRACT_ADDRESS = '0x123456789...'; // TODO: Update with actual deployed address
+// Web3DClaim contract address - use the actual deployed address
+export const CLAIM_CONTRACT_ADDRESS = '0x5B38Da6a701c568545dCfcB03FcB875f56beddC4'; // Replace with your actual contract address
 
 // ABI for ERC20 token (simplified)
 export const tokenABI = [

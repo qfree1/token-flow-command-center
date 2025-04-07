@@ -41,9 +41,16 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
     // Get contract and call setClaimList
     const claimContract = await getClaimContract(true);
     
-    // Create a transaction
+    // Get gas estimate for the transaction
+    const gasEstimate = await claimContract.methods.setClaimList(wallets, amountsInWei).estimateGas({
+      from: adminAddress
+    });
+    
+    // Create a transaction with gas parameters
     const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
       from: adminAddress,
+      gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer for gas estimation
+      gasPrice: await web3.eth.getGasPrice()
     });
     
     console.log(`Claim list set successfully. Transaction: ${tx.transactionHash}`);
@@ -64,27 +71,13 @@ export const checkClaimableAmount = async (address: string): Promise<string> => 
     // Get contract (no signer needed for view functions)
     const claimContract = await getClaimContract();
     
-    // Call getMyClaimable (for the current user) or check the mapping directly for any address
-    let amountInWei;
-    if (isDevelopment) {
-      // In development, we can simulate this
-      const web3 = new Web3();
-      amountInWei = await claimContract.methods.claimableAmount(address).call();
-      
-      // Check if already claimed
-      const hasClaimed = await claimContract.methods.claimed(address).call();
-      if (hasClaimed) {
-        return "0"; // Already claimed
-      }
-    } else {
-      // Call the actual contract method
-      amountInWei = await claimContract.methods.claimableAmount(address).call();
-      
-      // Check if already claimed
-      const hasClaimed = await claimContract.methods.claimed(address).call();
-      if (hasClaimed) {
-        return "0"; // Already claimed
-      }
+    // Call the contract to get claimable amount for the address
+    const amountInWei = await claimContract.methods.claimableAmount(address).call();
+    
+    // Check if already claimed
+    const hasClaimed = await claimContract.methods.claimed(address).call();
+    if (hasClaimed) {
+      return "0"; // Already claimed
     }
     
     // Convert from Wei to token amount (assuming 18 decimals)
@@ -123,9 +116,16 @@ export const claimTokens = async (address: string): Promise<boolean> => {
     // Get contract and call claim method
     const claimContract = await getClaimContract(true);
     
-    // Execute the claim transaction
-    const tx = await claimContract.methods.claim().send({
+    // Get gas estimate for the transaction
+    const gasEstimate = await claimContract.methods.claim().estimateGas({
       from: userAddress
+    });
+    
+    // Execute the claim transaction with gas parameters
+    const tx = await claimContract.methods.claim().send({
+      from: userAddress,
+      gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer for gas estimation
+      gasPrice: await web3.eth.getGasPrice()
     });
     
     console.log(`Tokens claimed successfully. Transaction: ${tx.transactionHash}`);
