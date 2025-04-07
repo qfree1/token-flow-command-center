@@ -201,7 +201,7 @@ export const distributeTokens = async (wallets: string[], amount: string): Promi
         // Send transaction
         const txResult = await tokenContract.methods.transfer(wallet, amountInWei).send({
           from: adminAddress,
-          gas: Math.floor(Number(gasEstimate) * 1.2), // Add 20% buffer for gas, fixed TS error
+          gas: Math.floor(Number(gasEstimate) * 1.2).toString(), // Add 20% buffer for gas, converted to string to fix the type error
         });
         
         console.log(`Transfer successful: ${txResult.transactionHash}`);
