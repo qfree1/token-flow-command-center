@@ -1,4 +1,3 @@
-
 import Web3 from 'web3';
 
 // ABI for ERC20 token (simplified)
@@ -345,9 +344,14 @@ export const claimTokens = async (userAddress: string): Promise<boolean> => {
 
 // Distribute tokens function (for admin use)
 export const distributeTokens = async (wallets: string[], amount: string): Promise<void> => {
-  // This is just a wrapper around setTokenAllocations for now
-  await setTokenAllocations(wallets, amount);
-  console.log(`Tokens successfully allocated for distribution`);
+  try {
+    // This is just a wrapper around setTokenAllocations for now
+    await setTokenAllocations(wallets, amount);
+    console.log(`Tokens successfully allocated for distribution to ${wallets.length} wallets`);
+  } catch (error) {
+    console.error("Error in distributeTokens:", error);
+    throw error;  // Re-throw to propagate the error to the UI
+  }
 };
 
 // Get token balance for a wallet (read-only operation)

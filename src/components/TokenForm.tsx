@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
   const [walletList, setWalletList] = useState('');
   const [tokenAmount, setTokenAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,17 +57,28 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
     }
 
     setLoading(true);
+    setSuccess(false);
     try {
       await onSubmit(wallets, tokenAmount);
+      
+      // Show success message
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      
+      // Reset form
       setWalletList('');
       setTokenAmount('');
+      
       toast({
         title: "Success",
-        description: "Tokens have been allocated for claiming",
+        description: `Tokens allocated for ${wallets.length} wallets to claim`,
         variant: "default"
       });
+      
+      // Log to confirm allocation was saved
+      console.log(`Allocated ${tokenAmount} tokens for ${wallets.length} wallets`);
     } catch (error) {
-      console.error(error);
+      console.error("Token allocation error:", error);
       toast({
         title: "Error",
         description: "Failed to allocate tokens. Please try again.",
@@ -145,6 +158,11 @@ const TokenForm: React.FC<TokenFormProps> = ({ onSubmit, disabled }) => {
                   <>
                     <Loader className="h-5 w-5 animate-spin mr-2" />
                     Processing...
+                  </>
+                ) : success ? (
+                  <>
+                    <Check className="h-5 w-5 mr-2" />
+                    Tokens Allocated!
                   </>
                 ) : (
                   <>
