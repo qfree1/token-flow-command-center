@@ -86,7 +86,17 @@ export const getWeb3 = async (): Promise<Web3> => {
         }
       }
       
-      const web3 = new Web3(window.ethereum as any);
+      // Create new Web3 instance with connected provider
+      const provider = window.ethereum;
+      const web3 = new Web3(provider);
+      
+      // Verify that accounts are accessible (wallet is unlocked)
+      const accounts = await web3.eth.getAccounts();
+      if (!accounts || accounts.length === 0) {
+        throw new Error("No accounts found. Please unlock your wallet.");
+      }
+      
+      console.log("Web3 initialized with provider and accounts:", accounts[0]);
       return web3;
     } catch (error) {
       console.error("Error initializing Web3 with wallet:", error);
@@ -126,7 +136,8 @@ export const connectWallet = async (): Promise<string> => {
 };
 
 export const isAdminWallet = (address: string): boolean => {
-  return address && address.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
+  if (!address) return false;
+  return address.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
 };
 
 // Get BSC chain info for users

@@ -78,6 +78,9 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
         setProcessedCount(index + 1);
       };
       
+      console.log("Setting claim list for wallets:", wallets);
+      console.log("With token amount:", tokenAmount);
+      
       // Process in batches to show progress
       for (let i = 0; i < wallets.length; i++) {
         // Update progress indicator every wallet
@@ -85,7 +88,7 @@ const ClaimListForm: React.FC<ClaimListFormProps> = ({ disabled }) => {
         
         // Add a small delay for UX (this is just for visualization)
         if (i < wallets.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
       

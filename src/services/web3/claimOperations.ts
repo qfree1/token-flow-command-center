@@ -46,7 +46,6 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
     const claimContract = await getClaimContract(true);
     console.log("Claim contract created successfully");
     
-    // First try to estimate gas to see if the operation would succeed
     try {
       console.log("Estimating gas for setClaimList...");
       const gasEstimate = await claimContract.methods.setClaimList(wallets, amountsInWei).estimateGas({
@@ -56,22 +55,21 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       console.log("Gas estimation successful:", gasEstimate);
       
       // Convert gas estimate to proper hexadecimal format with no decimal points
-      const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
+      const gasLimit = Math.ceil(Number(gasEstimate) * 1.5);
       
-      // Get gas price and convert to proper hex format
+      // Get gas price 
       const gasPriceWei = await web3.eth.getGasPrice();
-      const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
       
       console.log("Sending setClaimList transaction with gas:", {
         limit: gasLimit,
-        price: gasPrice
+        price: gasPriceWei
       });
       
       // Execute the transaction
       const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
         from: adminAddress,
         gas: gasLimit,
-        gasPrice: gasPrice
+        gasPrice: gasPriceWei
       });
       
       console.log(`Claim list set successfully. Transaction: ${tx.transactionHash}`);
@@ -164,23 +162,22 @@ export const claimTokens = async (address: string): Promise<boolean> => {
     
     console.log("Gas estimation successful:", gasEstimate);
     
-    // Convert gas estimate to proper hexadecimal format with no decimal points
-    const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
+    // Apply gas boost
+    const gasLimit = Math.ceil(Number(gasEstimate) * 1.5);
     
-    // Get gas price and convert to proper hex format
+    // Get gas price
     const gasPriceWei = await web3.eth.getGasPrice();
-    const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
     
     console.log("Sending claim transaction with gas:", {
       limit: gasLimit,
-      price: gasPrice
+      price: gasPriceWei
     });
     
-    // Execute the claim transaction with gas parameters
+    // Execute the claim transaction
     const tx = await claimContract.methods.claim().send({
       from: userAddress,
       gas: gasLimit,
-      gasPrice: gasPrice
+      gasPrice: gasPriceWei
     });
     
     console.log(`Tokens claimed successfully. Transaction: ${tx.transactionHash}`);
@@ -204,7 +201,7 @@ export const getClaimStatus = async (address: string): Promise<boolean> => {
     // Call the claimed mapping
     const hasClaimedStatus = await claimContract.methods.claimed(address).call();
     console.log(`Claim status for ${address}: ${hasClaimedStatus}`);
-    // Ensure we're returning a boolean
+    
     return Boolean(hasClaimedStatus);
   } catch (error) {
     console.error("Error checking claim status:", error);
@@ -227,26 +224,18 @@ export const getContractTokenBalance = async (): Promise<string> => {
     
     // Get the token address with proper type handling
     const tokenAddressResult = await claimContract.methods.web3dToken().call();
-    
-    // Make sure we have a valid token address
-    if (!tokenAddressResult) {
-      throw new Error("Failed to get token address from contract");
-    }
-    
-    // Safely convert to string
-    const tokenAddress = String(tokenAddressResult);
+    const tokenAddress = String(tokenAddressResult || '');
     console.log(`Token address from contract: ${tokenAddress}`);
     
+    if (!tokenAddress || tokenAddress === '0x' || tokenAddress === '0x0') {
+      throw new Error("Invalid token address returned from contract");
+    }
+    
     // Create token contract instance
-    const tokenContract = new web3.eth.Contract(
-      tokenABI as any, 
-      tokenAddress
-    );
+    const tokenContract = new web3.eth.Contract(tokenABI as any, tokenAddress);
     
-    // Get balance of claim contract with proper type handling
+    // Get balance of claim contract
     const balanceInWei = await tokenContract.methods.balanceOf(CLAIM_CONTRACT_ADDRESS).call();
-    
-    // Safely convert to string before using fromWei
     const balanceStr = String(balanceInWei || '0');
     const balance = web3.utils.fromWei(balanceStr, 'ether');
     
@@ -264,26 +253,27 @@ export const getTokenInfo = async (): Promise<{name: string, symbol: string}> =>
     const claimContract = await getClaimContract();
     
     // Get the token address from the claim contract
-    const tokenAddress = await claimContract.methods.web3dToken().call();
+    const tokenAddressResult = await claimContract.methods.web3dToken().call();
+    const tokenAddress = String(tokenAddressResult || '');
     console.log(`Token address: ${tokenAddress}`);
     
-    if (!tokenAddress) {
-      return { name: "Unknown", symbol: "???" };
+    if (!tokenAddress || tokenAddress === '0x' || tokenAddress === '0x0') {
+      return { name: "Web3D Token", symbol: "W3D" };
     }
     
     const web3 = new Web3(new Web3.providers.HttpProvider('https://bsc-dataseed.binance.org/'));
-    const tokenContract = new web3.eth.Contract(tokenABI as any, String(tokenAddress));
+    const tokenContract = new web3.eth.Contract(tokenABI as any, tokenAddress);
     
     try {
       // Get token name and symbol
-      const name = await tokenContract.methods.name().call();
-      const symbol = await tokenContract.methods.symbol().call();
+      const nameResult = await tokenContract.methods.name().call();
+      const symbolResult = await tokenContract.methods.symbol().call();
+      
+      const name = typeof nameResult === 'string' ? nameResult : "Web3D Token";
+      const symbol = typeof symbolResult === 'string' ? symbolResult : "W3D";
       
       console.log(`Token info - Name: ${name}, Symbol: ${symbol}`);
-      return { 
-        name: typeof name === 'string' ? name : "Web3D Token", 
-        symbol: typeof symbol === 'string' ? symbol : "W3D" 
-      };
+      return { name, symbol };
     } catch (error) {
       console.error("Error getting token info:", error);
       return { name: "Web3D Token", symbol: "W3D" };
@@ -311,7 +301,7 @@ export const debugClaimContract = async (address: string): Promise<any> => {
     
     console.log("Contract exists at the address");
     
-    // Create contract instance with explicit contract address parameter
+    // Create contract instance
     const claimContract = new web3.eth.Contract(claimContractABI as any, CLAIM_CONTRACT_ADDRESS);
     
     // Get token address with proper type handling
@@ -389,29 +379,21 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
     
     // Get the token address with proper type handling
     const tokenAddressResult = await claimContract.methods.web3dToken().call();
+    const tokenAddress = String(tokenAddressResult || '');
     
-    // Make sure we have a valid token address
-    if (!tokenAddressResult) {
-      throw new Error("Failed to get token address from contract");
+    if (!tokenAddress || tokenAddress === '0x' || tokenAddress === '0x0') {
+      throw new Error("Invalid token address returned from contract");
     }
     
-    // Safely convert to string
-    const tokenAddress = String(tokenAddressResult);
-    
     // Create token contract instance
-    const tokenContract = new web3.eth.Contract(
-      tokenABI as any, 
-      tokenAddress
-    );
+    const tokenContract = new web3.eth.Contract(tokenABI as any, tokenAddress);
     
     // Convert amount to wei
     const amountInWei = web3.utils.toWei(amount, 'ether');
     
-    // Check admin balance first with proper type handling
-    const adminBalance = await tokenContract.methods.balanceOf(adminAddress).call();
-    
-    // Safely convert to string for BigInt comparison
-    const adminBalanceStr = String(adminBalance || '0');
+    // Check admin balance first
+    const adminBalanceWei = await tokenContract.methods.balanceOf(adminAddress).call();
+    const adminBalanceStr = String(adminBalanceWei || '0');
     
     if (BigInt(adminBalanceStr) < BigInt(amountInWei)) {
       throw new Error("Insufficient token balance");
@@ -422,18 +404,25 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
       from: adminAddress
     });
     
-    // Convert gas estimate to proper hexadecimal format
-    const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
+    // Apply gas boost
+    const gasLimit = Math.ceil(Number(gasEstimate) * 1.5);
     
-    // Get gas price and convert to proper hex format
+    // Get gas price
     const gasPriceWei = await web3.eth.getGasPrice();
-    const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
+    
+    console.log("Funding claim contract with parameters:", {
+      contract: CLAIM_CONTRACT_ADDRESS,
+      from: adminAddress,
+      amount: amount,
+      gas: gasLimit,
+      gasPrice: gasPriceWei
+    });
     
     // Send tokens to claim contract
     const tx = await tokenContract.methods.transfer(CLAIM_CONTRACT_ADDRESS, amountInWei).send({
       from: adminAddress,
       gas: gasLimit,
-      gasPrice: gasPrice
+      gasPrice: gasPriceWei
     });
     
     console.log(`Claim contract funded with ${amount} tokens. Transaction: ${tx.transactionHash}`);
