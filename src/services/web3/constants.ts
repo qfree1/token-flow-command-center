@@ -16,7 +16,12 @@ export const isDevelopment = process.env.NODE_ENV !== 'production';
 // Web3DClaim contract address - use the actual deployed address
 export const CLAIM_CONTRACT_ADDRESS = '0x5B38Da6a701c568545dCfcB03FcB875f56beddC4'; // Replace with your actual contract address
 
-// ABI for ERC20 token (simplified)
+// Chain ID for BSC mainnet
+export const BSC_CHAIN_ID = 56;
+// Chain ID for BSC testnet
+export const BSC_TESTNET_CHAIN_ID = 97;
+
+// ABI for BEP20 token (Standard ERC20 compatible)
 export const tokenABI = [
   {
     "constant": true,
@@ -44,6 +49,48 @@ export const tokenABI = [
     "inputs": [{ "name": "_owner", "type": "address" }],
     "name": "balanceOf",
     "outputs": [{ "name": "balance", "type": "uint256" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [{ "name": "", "type": "uint8" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "_spender", "type": "address" },
+      { "name": "_value", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "name": "_owner", "type": "address" },
+      { "name": "_spender", "type": "address" }
+    ],
+    "name": "allowance",
+    "outputs": [{ "name": "", "type": "uint256" }],
     "payable": false,
     "stateMutability": "view",
     "type": "function"

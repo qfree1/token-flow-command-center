@@ -46,11 +46,17 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       from: adminAddress
     });
     
+    // Convert gas estimate from BigInt to string with buffer
+    const gasLimit = (Number(gasEstimate) * 1.2).toString();
+    
+    // Get gas price and convert to string
+    const gasPrice = (await web3.eth.getGasPrice()).toString();
+    
     // Create a transaction with gas parameters
     const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
       from: adminAddress,
-      gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer for gas estimation
-      gasPrice: await web3.eth.getGasPrice()
+      gas: gasLimit,
+      gasPrice: gasPrice
     });
     
     console.log(`Claim list set successfully. Transaction: ${tx.transactionHash}`);
@@ -82,7 +88,9 @@ export const checkClaimableAmount = async (address: string): Promise<string> => 
     
     // Convert from Wei to token amount (assuming 18 decimals)
     const web3 = new Web3();
-    const amount = web3.utils.fromWei(amountInWei.toString(), 'ether');
+    // Ensure amountInWei is properly converted to string before using fromWei
+    const amountInWeiStr = String(amountInWei);
+    const amount = web3.utils.fromWei(amountInWeiStr, 'ether');
     
     return amount;
   } catch (error) {
@@ -121,11 +129,17 @@ export const claimTokens = async (address: string): Promise<boolean> => {
       from: userAddress
     });
     
+    // Convert gas estimate from BigInt to string with buffer
+    const gasLimit = (Number(gasEstimate) * 1.2).toString();
+    
+    // Get gas price and convert to string
+    const gasPrice = (await web3.eth.getGasPrice()).toString();
+    
     // Execute the claim transaction with gas parameters
     const tx = await claimContract.methods.claim().send({
       from: userAddress,
-      gas: Math.floor(gasEstimate * 1.2), // Add 20% buffer for gas estimation
-      gasPrice: await web3.eth.getGasPrice()
+      gas: gasLimit,
+      gasPrice: gasPrice
     });
     
     console.log(`Tokens claimed successfully. Transaction: ${tx.transactionHash}`);
@@ -153,5 +167,150 @@ export const getClaimStatus = async (address: string): Promise<boolean> => {
   } catch (error) {
     console.error("Error checking claim status:", error);
     return false;
+  }
+};
+
+// For admin: Get token balance of contract
+export const getContractTokenBalance = async (): Promise<string> => {
+  try {
+    const web3 = await getWeb3();
+    const accounts = await web3.eth.getAccounts();
+    const adminAddress = accounts[0];
+    
+    if (!isAdminWallet(adminAddress)) {
+      throw new Error("Only admin can check contract balance");
+    }
+    
+    const claimContract = await getClaimContract();
+    const tokenAddress = await claimContract.methods.web3dToken().call();
+    
+    // Create token contract instance
+    const tokenContract = new web3.eth.Contract(
+      [
+        {
+          "constant": true,
+          "inputs": [{ "name": "_owner", "type": "address" }],
+          "name": "balanceOf",
+          "outputs": [{ "name": "balance", "type": "uint256" }],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function"
+        }
+      ] as any, 
+      tokenAddress
+    );
+    
+    // Get balance of claim contract
+    const balanceInWei = await tokenContract.methods.balanceOf(CLAIM_CONTRACT_ADDRESS).call();
+    const balance = web3.utils.fromWei(balanceInWei.toString(), 'ether');
+    
+    return balance;
+  } catch (error) {
+    console.error("Error getting contract token balance:", error);
+    return "0";
+  }
+};
+
+// For admin: Check if users are in claim list
+export const checkUsersInClaimList = async (addresses: string[]): Promise<{[address: string]: string}> => {
+  try {
+    const result: {[address: string]: string} = {};
+    const claimContract = await getClaimContract();
+    
+    // Check each address one by one
+    for (const address of addresses) {
+      if (address && address.startsWith('0x')) {
+        try {
+          const amountInWei = await claimContract.methods.claimableAmount(address).call();
+          const claimed = await claimContract.methods.claimed(address).call();
+          
+          const web3 = new Web3();
+          const amount = claimed ? "0 (Claimed)" : web3.utils.fromWei(String(amountInWei), 'ether');
+          
+          result[address] = amount;
+        } catch (err) {
+          result[address] = "Error";
+        }
+      } else {
+        result[address] = "Invalid Address";
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error checking claim list:", error);
+    throw error;
+  }
+};
+
+// For admin: Send tokens directly to claim contract
+export const fundClaimContract = async (amount: string): Promise<boolean> => {
+  try {
+    const web3 = await getWeb3();
+    const accounts = await web3.eth.getAccounts();
+    const adminAddress = accounts[0];
+    
+    if (!isAdminWallet(adminAddress)) {
+      throw new Error("Only admin can fund the claim contract");
+    }
+    
+    // Get claim contract instance to get token address
+    const claimContract = await getClaimContract();
+    const tokenAddress = await claimContract.methods.web3dToken().call();
+    
+    // Create token contract instance
+    const tokenContract = new web3.eth.Contract(
+      [
+        {
+          "constant": false,
+          "inputs": [
+            { "name": "_to", "type": "address" },
+            { "name": "_value", "type": "uint256" }
+          ],
+          "name": "transfer",
+          "outputs": [{ "name": "", "type": "bool" }],
+          "payable": false,
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [{ "name": "_owner", "type": "address" }],
+          "name": "balanceOf",
+          "outputs": [{ "name": "balance", "type": "uint256" }],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function"
+        }
+      ] as any, 
+      tokenAddress
+    );
+    
+    // Convert amount to wei
+    const amountInWei = web3.utils.toWei(amount, 'ether');
+    
+    // Check admin balance first
+    const adminBalance = await tokenContract.methods.balanceOf(adminAddress).call();
+    if (BigInt(adminBalance) < BigInt(amountInWei)) {
+      throw new Error("Insufficient token balance");
+    }
+    
+    // Get gas estimate
+    const gasEstimate = await tokenContract.methods.transfer(CLAIM_CONTRACT_ADDRESS, amountInWei).estimateGas({
+      from: adminAddress
+    });
+    
+    // Send tokens to claim contract
+    const tx = await tokenContract.methods.transfer(CLAIM_CONTRACT_ADDRESS, amountInWei).send({
+      from: adminAddress,
+      gas: (Number(gasEstimate) * 1.2).toString(),
+      gasPrice: (await web3.eth.getGasPrice()).toString()
+    });
+    
+    console.log(`Claim contract funded with ${amount} tokens. Transaction: ${tx.transactionHash}`);
+    return true;
+  } catch (error) {
+    console.error("Error funding claim contract:", error);
+    throw error;
   }
 };
