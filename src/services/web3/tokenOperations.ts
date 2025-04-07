@@ -198,10 +198,18 @@ export const distributeTokens = async (wallets: string[], amount: string): Promi
         // Get gas estimate
         const gasEstimate = await tokenContract.methods.transfer(wallet, amountInWei).estimateGas({ from: adminAddress });
         
+        // Convert gas estimate to proper hexadecimal format
+        const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
+        
+        // Get gas price and convert to proper hex format
+        const gasPriceWei = await web3.eth.getGasPrice();
+        const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
+        
         // Send transaction
         const txResult = await tokenContract.methods.transfer(wallet, amountInWei).send({
           from: adminAddress,
-          gas: Math.floor(Number(gasEstimate) * 1.2).toString(), // Add 20% buffer for gas, converted to string to fix the type error
+          gas: gasLimit,
+          gasPrice: gasPrice
         });
         
         console.log(`Transfer successful: ${txResult.transactionHash}`);

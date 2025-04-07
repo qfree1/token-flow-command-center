@@ -46,11 +46,13 @@ export const setClaimList = async (wallets: string[], amounts: string[]): Promis
       from: adminAddress
     });
     
-    // Convert gas estimate from BigInt to string with buffer
-    const gasLimit = (Number(gasEstimate) * 1.2).toString();
+    // Convert gas estimate to proper hexadecimal format with no decimal points
+    // Using Math.ceil to ensure we round up for any floating point values
+    const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
     
-    // Get gas price and convert to string
-    const gasPrice = (await web3.eth.getGasPrice()).toString();
+    // Get gas price and convert to proper hex format
+    const gasPriceWei = await web3.eth.getGasPrice();
+    const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
     
     // Create a transaction with gas parameters
     const tx = await claimContract.methods.setClaimList(wallets, amountsInWei).send({
@@ -129,11 +131,13 @@ export const claimTokens = async (address: string): Promise<boolean> => {
       from: userAddress
     });
     
-    // Convert gas estimate from BigInt to string with buffer
-    const gasLimit = (Number(gasEstimate) * 1.2).toString();
+    // Convert gas estimate to proper hexadecimal format with no decimal points
+    // Using Math.ceil to ensure we round up for any floating point values
+    const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
     
-    // Get gas price and convert to string
-    const gasPrice = (await web3.eth.getGasPrice()).toString();
+    // Get gas price and convert to proper hex format
+    const gasPriceWei = await web3.eth.getGasPrice();
+    const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
     
     // Execute the claim transaction with gas parameters
     const tx = await claimContract.methods.claim().send({
@@ -295,11 +299,18 @@ export const fundClaimContract = async (amount: string): Promise<boolean> => {
       from: adminAddress
     });
     
+    // Convert gas estimate to proper hexadecimal format
+    const gasLimit = '0x' + Math.ceil(Number(gasEstimate) * 1.2).toString(16);
+    
+    // Get gas price and convert to proper hex format
+    const gasPriceWei = await web3.eth.getGasPrice();
+    const gasPrice = '0x' + BigInt(gasPriceWei).toString(16);
+    
     // Send tokens to claim contract
     const tx = await tokenContract.methods.transfer(CLAIM_CONTRACT_ADDRESS, amountInWei).send({
       from: adminAddress,
-      gas: (Number(gasEstimate) * 1.2).toString(),
-      gasPrice: (await web3.eth.getGasPrice()).toString()
+      gas: gasLimit,
+      gasPrice: gasPrice
     });
     
     console.log(`Claim contract funded with ${amount} tokens. Transaction: ${tx.transactionHash}`);
